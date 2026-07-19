@@ -1,76 +1,82 @@
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
-  CartesianGrid,
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
 } from "recharts";
 
 interface Analytics {
   emails: number;
   urls: number;
   sms: number;
-  threats: number;
+  weekly_trend: {
+    day: string;
+    scans: number;
+  }[];
 }
 
 interface Props {
-  analytics?: Analytics;
+  analytics: Analytics;
 }
 
-function DashboardCharts({ analytics }: Props) {
-  const data = analytics ?? {
-    emails: 0,
-    urls: 0,
-    sms: 0,
-    threats: 0,
-  };
+export default function DashboardCharts({
+  analytics,
+}: Props) {
 
-  
+  const weeklyData =
+    analytics?.weekly_trend?.length
+      ? analytics.weekly_trend
+      : [
+          { day: "Mon", scans: 0 },
+          { day: "Tue", scans: 0 },
+          { day: "Wed", scans: 0 },
+          { day: "Thu", scans: 0 },
+          { day: "Fri", scans: 0 },
+          { day: "Sat", scans: 0 },
+          { day: "Sun", scans: 0 },
+        ];
 
   const scanData = [
-    { name: "Email", value: data.emails },
-    { name: "URL", value: data.urls },
-    { name: "SMS", value: data.sms },
+    {
+      name: "Email",
+      value: analytics.emails,
+    },
+    {
+      name: "URL",
+      value: analytics.urls,
+    },
+    {
+      name: "SMS",
+      value: analytics.sms,
+    },
   ];
-
- 
-
-  const weeklyTrend = [
-    { day: "Mon", scans: 8 },
-    { day: "Tue", scans: 12 },
-    { day: "Wed", scans: 15 },
-    { day: "Thu", scans: 10 },
-    { day: "Fri", scans: 18 },
-    { day: "Sat", scans: 6 },
-    { day: "Sun", scans: 9 },
-  ];
-
-  
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8 mt-10">
+    <div className="grid lg:grid-cols-2 gap-8">
 
-      {/* Weekly Trend */}
+      <div className="bg-[#161616] rounded-xl p-5">
 
-      <div className="bg-[#161616] rounded-2xl p-6 border border-cyan-500/20">
-
-        <h2 className="text-2xl font-bold text-cyan-400 mb-6">
+        <h2 className="text-cyan-400 text-2xl font-bold mb-5">
           Weekly Scan Trend
         </h2>
 
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="overflow-x-auto">
 
-          <LineChart data={weeklyTrend}>
+          <LineChart
+            width={620}
+            height={300}
+            data={weeklyData}
+          >
 
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid stroke="#333" />
 
             <XAxis dataKey="day" />
 
-            <YAxis />
+            <YAxis allowDecimals={false} />
 
             <Tooltip />
 
@@ -83,47 +89,44 @@ function DashboardCharts({ analytics }: Props) {
 
           </LineChart>
 
-        </ResponsiveContainer>
+        </div>
 
       </div>
 
-      {/* Scan Distribution */}
+      <div className="bg-[#161616] rounded-xl p-5">
 
-      <div className="bg-[#161616] rounded-2xl p-6 border border-cyan-500/20">
-
-        <h2 className="text-2xl font-bold text-cyan-400 mb-6">
+        <h2 className="text-cyan-400 text-2xl font-bold mb-5">
           Scan Distribution
         </h2>
 
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="overflow-x-auto">
 
-          <BarChart data={scanData}>
+          <BarChart
+            width={620}
+            height={300}
+            data={scanData}
+          >
 
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid stroke="#333" />
 
             <XAxis dataKey="name" />
 
-            <YAxis />
+            <YAxis allowDecimals={false} />
 
             <Tooltip />
 
             <Bar
               dataKey="value"
               fill="#06b6d4"
-              radius={[8, 8, 0, 0]}
+              radius={[6, 6, 0, 0]}
             />
 
           </BarChart>
 
-        </ResponsiveContainer>
+        </div>
 
       </div>
-
-     
-     
 
     </div>
   );
 }
-
-export default DashboardCharts;

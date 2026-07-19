@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000",
 });
+
 
 
 // ===========================================
@@ -80,6 +81,24 @@ export const updateProfile = async (
   return response.data;
 
 };
+
+// Upload Avatar Image
+export const uploadAvatar = async (
+  userId: number,
+  file: File
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await API.post(
+    `/users/upload-avatar/${userId}`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+
+  return response.data; // { avatar_url: "..." }
+};
+
 
 // Verify Email
 export const verifyEmail = async (
@@ -182,12 +201,13 @@ export const scanSMS = async (data: any) => {
 // ===========================================
 
 export const checkPassword = async (
-  password: string
+  password: string,
+  userId?: number
 ) => {
 
   const response = await API.post(
     "/password/check",
-    { password }
+    { password, user_id: userId }
   );
 
   return response.data;
@@ -200,15 +220,18 @@ export const checkPassword = async (
 // ===========================================
 
 export const uploadFile = async (
-  file: File
+  file: File,
+  userId?: number
 ) => {
 
   const formData = new FormData();
 
   formData.append("file", file);
 
+  const url = userId ? `/upload/file?user_id=${userId}` : "/upload/file";
+
   const response = await API.post(
-    "/upload/file",
+    url,
     formData,
     {
       headers: {

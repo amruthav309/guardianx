@@ -23,3 +23,14 @@ build/
 # OS Files
 Thumbs.db
 .DS_Store
+
+# Uploads (user-generated content)
+backend/uploads/
+
+# Archives
+*.zip
+*.7z
+
+# SQLite DB (local only)
+*.db
+*.sqlite

@@ -1,99 +1,91 @@
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import QuickScanner from "../components/QuickScanner";
-import { useEffect, useState } from "react";
+import { getCurrentUser } from "../services/auth";
+import { FaShieldAlt, FaRobot, FaBolt } from "react-icons/fa";
 
 function Scanner() {
+  const user = getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
 
- const [sidebarOpen, setSidebarOpen] = useState(() => {
-  return localStorage.getItem("sidebarOpen") !== "false";
-});
-
-useEffect(() => {
-  localStorage.setItem(
-    "sidebarOpen",
-    String(sidebarOpen)
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    localStorage.getItem("sidebarOpen") !== "false"
   );
-}, [sidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem("sidebarOpen", String(sidebarOpen));
+  }, [sidebarOpen]);
 
   return (
-
-    <div className="flex min-h-screen bg-[#09090B] text-white">
-
-        <button
-  onClick={() => setSidebarOpen(!sidebarOpen)}
-  className={`fixed top-6 z-50 w-10 h-10 rounded-full
-  bg-cyan-500 hover:bg-cyan-600
-  text-black shadow-lg
-  flex items-center justify-center
-  transition-all duration-300
-  ${sidebarOpen ? "left-[210px]" : "left-4"}`}
->
-  {sidebarOpen ? "◀" : "▶"}
-</button>
-
+    <div className="flex min-h-screen bg-[#070709] text-white page-enter">
       {sidebarOpen && <Sidebar />}
+      <div className="flex-1 p-5 overflow-y-auto">
+        <Topbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex-1 p-5">
+        {/* Header */}
+        <div className="mt-8 flex flex-col lg:flex-row justify-between items-start gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-cyber text-cyan-400 glow-text-cyan">
+              AI Security Scanner
+            </h1>
+            <p className="text-zinc-500 text-xs mt-1">
+              Powered by GuardianX Neural Engine — scanning for{" "}
+              <span className="text-cyan-400 font-mono">{user.email}</span>
+            </p>
+          </div>
 
-        <Topbar />
+          {/* Status Chips */}
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2 bg-[#0e0e11] border border-cyan-500/20 rounded-lg px-3 py-2">
+              <FaRobot className="text-cyan-400 text-xs" />
+              <div>
+                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Engine</p>
+                <p className="text-[10px] text-cyan-400 font-cyber font-bold">GuardianX AI</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-[#0e0e11] border border-emerald-500/20 rounded-lg px-3 py-2">
+              <FaBolt className="text-emerald-400 text-xs" />
+              <div>
+                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Status</p>
+                <p className="text-[10px] text-emerald-400 font-cyber font-bold">● READY</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-2 bg-[#0e0e11] border border-violet-500/20 rounded-lg px-3 py-2">
+              <FaShieldAlt className="text-violet-400 text-xs" />
+              <div>
+                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Threat DB</p>
+                <p className="text-[10px] text-violet-400 font-cyber font-bold">ONLINE</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <div className="mt-8 rounded-2xl bg-[#161616] border border-cyan-500/20 p-8">
+        {/* Scanner Grid — scan types info */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
+          {[
+            { label: "Email", icon: "✉", desc: "Phishing analysis" },
+            { label: "URL", icon: "🌐", desc: "Link safety check" },
+            { label: "SMS", icon: "💬", desc: "Text threat scan" },
+            { label: "Password", icon: "🔑", desc: "Strength analysis" },
+            { label: "File", icon: "📄", desc: "Malware scan" },
+          ].map((t) => (
+            <div key={t.label} className="bg-[#0e0e11] border border-zinc-800 hover:border-cyan-500/30 rounded-xl p-3 text-center transition-all hover-card-trigger cursor-default">
+              <div className="text-2xl mb-1">{t.icon}</div>
+              <p className="text-[11px] font-bold font-cyber text-zinc-200">{t.label}</p>
+              <p className="text-[9px] text-zinc-600">{t.desc}</p>
+            </div>
+          ))}
+        </div>
 
-  <div className="flex flex-col lg:flex-row justify-between items-center">
-
-    <div>
-
-      <h1 className="text-4xl font-bold text-cyan-400">
-        🔍 AI Security Scanner
-      </h1>
-
-      <p className="text-zinc-400 mt-3 text-lg">
-        Scan Emails, URLs, SMS, Passwords and Files using GuardianX AI Engine.
-      </p>
-
-    </div>
-
-    <div className="mt-6 lg:mt-0 flex gap-4">
-
-      <div className="bg-[#202020] rounded-xl px-5 py-4 border border-cyan-500/20">
-
-        <p className="text-zinc-500 text-sm">
-          Engine
-        </p>
-
-        <h3 className="text-cyan-400 font-bold">
-          GuardianX AI
-        </h3>
-
+        {/* Main Scanner */}
+        <div className="mt-6 glass-panel-cyan rounded-xl border border-cyan-500/20">
+          <QuickScanner />
+        </div>
       </div>
-
-      <div className="bg-[#202020] rounded-xl px-5 py-4 border border-green-500/20">
-
-        <p className="text-zinc-500 text-sm">
-          Status
-        </p>
-
-        <h3 className="text-green-400 font-bold">
-          ● Ready
-        </h3>
-
-      </div>
-
     </div>
-
-  </div>
-
-</div>
-
-<QuickScanner />
-
-      </div>
-
-    </div>
-
   );
-
 }
 
 export default Scanner;

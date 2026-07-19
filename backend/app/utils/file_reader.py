@@ -7,7 +7,7 @@ def read_uploaded_file(file_path: str) -> str:
     extension = Path(file_path).suffix.lower()
 
     if extension == ".txt":
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
             return file.read()
 
     elif extension == ".eml":

@@ -1,15 +1,21 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 import re
+from sqlalchemy.orm import Session
 
-from app.database.history import save_scan
+from app.database.database import get_db
+from app.services.history_service import save_history
 
 router = APIRouter()
 
 
 @router.post("/check")
-def check_password(data: dict):
+def check_password(
+    data: dict,
+    db: Session = Depends(get_db)
+):
 
     password = data.get("password", "")
+    user_id = data.get("user_id")
 
     score = 0
 
@@ -49,13 +55,18 @@ def check_password(data: dict):
     else:
         strength = "Strong"
 
-    save_scan(
-        scan_type="Password",
-        filename="Manual Input",
-        status=strength,
-        confidence=score,
-        matched_words=[]
-    )
+    if user_id:
+        try:
+            save_history(
+                db=db,
+                user_id=user_id,
+                scan_type="Password",
+                filename="Manual Input",
+                status=strength,
+                confidence=score,
+            )
+        except Exception as e:
+            print(f"Error logging password check to db: {e}")
 
     return {
         "strength": strength,

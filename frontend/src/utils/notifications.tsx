@@ -1,3 +1,5 @@
+import { showToast } from "./showToast";
+
 export const addNotification = (
   title: string,
   message: string,
@@ -21,5 +23,8 @@ export const addNotification = (
     "guardianx_notifications",
     JSON.stringify(notifications)
   );
+
+  // Trigger custom toast notification
+  showToast(title, message, type);
 
 };

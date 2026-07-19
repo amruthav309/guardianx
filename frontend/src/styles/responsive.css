@@ -1,0 +1,127 @@
+/* ===========================
+   GLOBAL RESPONSIVE FIXES
+=========================== */
+
+html,
+body,
+#root{
+    width:100%;
+    overflow-x:hidden;
+}
+
+/* Prevent images from overflowing */
+
+img{
+    max-width:100%;
+    height:auto;
+}
+
+/* Tables */
+
+table{
+    width:100%;
+}
+
+/* Charts */
+
+.recharts-wrapper,
+.recharts-responsive-container{
+    max-width:100%!important;
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media screen and (max-width:1024px){
+
+    body{
+        overflow-x:hidden;
+    }
+
+    *{
+        max-width:100%;
+    }
+
+    main{
+        padding:16px !important;
+    }
+
+    h1{
+        word-break:break-word;
+    }
+
+    button{
+        touch-action:manipulation;
+    }
+
+}
+
+/* ===========================
+   PHONE
+=========================== */
+
+@media screen and (max-width:768px){
+
+    html,
+    body,
+    #root{
+        overflow-x:hidden;
+    }
+
+    .recharts-wrapper{
+        overflow:hidden;
+    }
+
+    .overflow-x-auto{
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+
+    table{
+        min-width:700px;
+    }
+
+    input,
+    textarea,
+    select{
+        width:100%;
+    }
+
+    button{
+        min-height:44px;
+    }
+
+}
+
+/* ===========================
+   SMALL PHONE
+=========================== */
+
+@media screen and (max-width:480px){
+
+    body{
+
+        font-size:14px;
+
+    }
+
+    h1{
+
+        font-size:1.6rem!important;
+
+    }
+
+    h2{
+
+        font-size:1.25rem!important;
+
+    }
+
+    h3{
+
+        font-size:1rem!important;
+
+    }
+
+}

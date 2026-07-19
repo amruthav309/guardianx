@@ -1,33 +1,37 @@
+import re
 from datetime import datetime
 
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 
 from app.models.user import User
+from app.models.history import History
 from app.schemas.user import UserCreate
+from app.utils.security import hash_password, verify_password
 from app.services.email_service import (
     generate_otp,
     send_verification_email
 )
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
 
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
+
+def validate_password_strength(password: str):
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one capital letter.")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter.")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one number.")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise ValueError("Password must contain at least one special character.")
 
 
-def verify_password(
-    plain_password: str,
-    hashed_password: str
-):
-    return pwd_context.verify(
-        plain_password,
-        hashed_password
-    )
+
+
+
+
 
 
 # ==========================================
@@ -38,6 +42,8 @@ def create_user(
     db: Session,
     user: UserCreate
 ):
+    validate_password_strength(user.password)
+
 
     existing_email = (
         db.query(User)
@@ -229,6 +235,7 @@ def change_password(
     email: str,
     new_password: str,
 ):
+    validate_password_strength(new_password)
 
     user = (
         db.query(User)
@@ -315,6 +322,7 @@ def update_profile(
     user_id: int,
     name: str,
     username: str,
+    profile_pic: str = None,
 ):
 
     user = (
@@ -326,10 +334,37 @@ def update_profile(
     if user is None:
         return None
 
-    user.name = name
-    user.username = username
+    if name is not None:
+        user.name = name
+    if username is not None:
+        user.username = username
+    if profile_pic is not None:
+        user.profile_pic = profile_pic
 
     db.commit()
     db.refresh(user)
 
     return user
+
+def delete_user(db: Session, user_id: int):
+
+    user = (
+        db.query(User)
+        .filter(User.id == user_id)
+        .first()
+    )
+
+    if user is None:
+        return None
+
+    # Delete user's scan history first
+    db.query(History).filter(
+        History.user_id == user_id
+    ).delete()
+
+    # Delete the user
+    db.delete(user)
+
+    db.commit()
+
+    return True

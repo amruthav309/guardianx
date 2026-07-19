@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -24,6 +26,7 @@ from app.services.user_service import (
     get_profile,
     send_forgot_password_otp,
     verify_forgot_password_otp,
+    delete_user,
 )
    
 
@@ -54,6 +57,7 @@ def register(
             "username": new_user.username,
             "email": new_user.email,
             "email_verified": new_user.email_verified,
+            "profile_pic": new_user.profile_pic,
         }
 
     except Exception as e:
@@ -109,6 +113,8 @@ def login(
 
             "account_status": db_user.account_status,
 
+            "profile_pic": db_user.profile_pic,
+
         }
 
     except HTTPException:
@@ -132,22 +138,26 @@ def update_password(
     data: ChangePassword,
     db: Session = Depends(get_db),
 ):
+    try:
+        result = change_password(
+            db,
+            data.email,
+            data.new_password,
+        )
 
-    result = change_password(
-        db,
-        data.email,
-        data.new_password,
-    )
-
-    if result is None:
+        if result is None:
+            return {
+                "message": "User not found"
+            }
 
         return {
-            "message": "User not found"
+            "message": "Password updated successfully"
         }
-
-    return {
-        "message": "Password updated successfully"
-    }
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
 
 # ==========================================
 # Forgot Password - Send OTP
@@ -204,6 +214,7 @@ def update_user_profile(
         user_id,
         data.name,
         data.username,
+        data.profile_pic,
     )
 
     if user is None:
@@ -219,6 +230,7 @@ def update_user_profile(
             "name": user.name,
             "username": user.username,
             "email": user.email,
+            "profile_pic": user.profile_pic,
         }
     }
 
@@ -322,6 +334,8 @@ def profile(
 
             "account_status": user.account_status,
 
+            "profile_pic": user.profile_pic,
+
             "created_at": user.created_at,
 
         }
@@ -332,3 +346,53 @@ def profile(
             status_code=404,
             detail=str(e)
         )
+    
+@router.delete("/delete/{user_id}")
+def delete_account(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    result = delete_user(db, user_id)
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+    return {
+        "message": "Account deleted successfully."
+    }
+
+# ==========================================
+# Upload Avatar
+# ==========================================
+
+UPLOAD_DIR = "uploads"
+
+@router.post("/upload-avatar/{user_id}")
+async def upload_avatar(
+    user_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    ext = os.path.splitext(file.filename)[1] if file.filename else ".png"
+    filename = f"avatar_{user_id}_{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    with open(filepath, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    avatar_url = f"http://127.0.0.1:8000/uploads/{filename}"
+
+    user = update_profile(db, user_id, None, None, avatar_url)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    return {
+        "message": "Avatar uploaded successfully.",
+        "avatar_url": avatar_url,
+    }

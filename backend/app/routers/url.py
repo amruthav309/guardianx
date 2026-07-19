@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.services.history_service import save_history
 from app.utils.advisor import generate_advice
+from app.services.security_detector import scan_url as detect_url
 
 router = APIRouter()
 
@@ -13,66 +14,41 @@ def scan_url(
     data: dict,
     db: Session = Depends(get_db)
 ):
+    url = data.get("url", "")
+    user_id = data.get("user_id")
 
-    url = data.get("url", "").lower()
-
-    suspicious_keywords = [
-        "login",
-        "verify",
-        "secure",
-        "bank",
-        "update",
-        "account",
-        "password",
-        "signin",
-        "confirm",
-        "free",
-        "gift",
-        "winner",
-        "bonus",
-        "paypal",
-        "bitcoin",
-    ]
-
-    found = []
-
-    for word in suspicious_keywords:
-        if word in url:
-            found.append(word)
-
-    if len(found) >= 2:
-
-        result = {
-            "status": "Phishing",
-            "confidence": 96,
-            "matched_words": found
+    if not url:
+        return {
+            "status": "Error",
+            "confidence": 0,
+            "matched_words": [],
+            "message": "URL cannot be empty."
         }
 
-    else:
+    print("\n===== URL RECEIVED =====")
+    print(url)
 
-        result = {
-            "status": "Safe",
-            "confidence": 93,
-            "matched_words": found
-        }
+    result = detect_url(url)
 
-    # Save to History
-    save_history(
-    db=db,
-    user_id=data["user_id"],
-    scan_type="URL",
-    filename=data.get("url", "Manual URL"),
-    status=result["status"],
-    confidence=result["confidence"],
-)
+    print("Detection Result:", result)
+    print("=========================\n")
 
-    # AI Security Advisor
-    advisor = generate_advice(
+    if user_id:
+        save_history(
+            db=db,
+            user_id=user_id,
+            scan_type="URL",
+            filename=url,
+            status=result["status"],
+            confidence=result["confidence"],
+        )
+
+    advice = generate_advice(
         result["status"],
-        result["matched_words"]
+        result["matched_words"],
     )
 
     return {
         **result,
-        "advisor": advisor
+        "advisor": advice,
     }

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.services.history_service import save_history
 from app.utils.advisor import generate_advice
+from app.services.security_detector import scan_sms as detect_sms
 
 router = APIRouter()
 
@@ -13,74 +14,41 @@ def scan_sms(
     data: dict,
     db: Session = Depends(get_db)
 ):
+    sms = data.get("sms", "")
+    user_id = data.get("user_id")
 
-    sms = data.get("sms", "").lower()
-
-    suspicious_keywords = [
-        "otp",
-        "verify",
-        "click",
-        "urgent",
-        "bank",
-        "account",
-        "winner",
-        "free",
-        "gift",
-        "claim",
-        "prize",
-        "limited",
-        "offer",
-        "login",
-        "password",
-    ]
-
-    found = []
-
-    for word in suspicious_keywords:
-        if word in sms:
-            found.append(word)
-
-    if len(found) >= 2:
-
-        result = {
-            "status": "Phishing",
-            "confidence": 95,
-            "matched_words": found
+    if len(sms) > 3000:
+        return {
+            "status": "Error",
+            "confidence": 0,
+            "matched_words": [],
+            "message": "SMS is too large."
         }
 
-    elif len(found) == 1:
+    print("\n===== SMS RECEIVED =====")
+    print(sms)
 
-        result = {
-            "status": "Suspicious",
-            "confidence": 75,
-            "matched_words": found
-        }
+    result = detect_sms(sms)
 
-    else:
+    print("Detection Result:", result)
+    print("=========================\n")
 
-        result = {
-            "status": "Safe",
-            "confidence": 92,
-            "matched_words": found
-        }
+    if user_id:
+        save_history(
+            db=db,
+            user_id=user_id,
+            scan_type="SMS",
+            filename="Manual SMS",
+            status=result["status"],
+            confidence=result["confidence"],
+        )
 
-    # Save to History
-    save_history(
-    db=db,
-    user_id=data["user_id"],
-    scan_type="SMS",
-    filename="Manual SMS",
-    status=result["status"],
-    confidence=result["confidence"],
-)
-
-    # AI Security Advisor
-    advisor = generate_advice(
+    advice = generate_advice(
         result["status"],
-        result["matched_words"]
+        result["matched_words"],
     )
 
     return {
         **result,
-        "advisor": advisor
+        "advisor": advice,
     }

@@ -8,40 +8,67 @@ import {
   uploadFile,
   downloadReport,
   getCurrentUser,
+  getAnalytics,
+  getHistory,
 } from "../services/auth";
 
 function QuickScanner() {
 
   const [scanType, setScanType] = useState("email");
-
   const [text, setText] = useState("");
-
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
-
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [scanError, setScanError] = useState("");
+  const [scanning, setScanning] = useState(false);
+
+  // Unique max limits per scan type
+  const MAX_LIMITS: Record<string, number> = {
+    email: 3000,
+    url: 2048,
+    sms: 1000,
+    password: 128,
+  };
+  const currentLimit = MAX_LIMITS[scanType] ?? 5000;
+
+  const refreshDashboard = async () => {
+  const user = getCurrentUser();
+
+  if (!user) return;
+
+  const analytics = await getAnalytics(user.id);
+  const history = await getHistory();
+
+  localStorage.setItem(
+    "guardianx_dashboard",
+    JSON.stringify({
+      analytics,
+      history,
+    })
+  );
+};
 
   const handleScan = async () => {
+    setScanError("");
 
     try {
-
       let input = text;
 
       if (selectedFile) {
-
-        const uploaded = await uploadFile(selectedFile);
-
+        const uploaded = await uploadFile(selectedFile, getCurrentUser()?.id);
         input = uploaded.content;
-
       }
 
       if (!input.trim()) {
-
-        alert("Please paste text or upload a file.");
-
+        setScanError("Please paste text or upload a file.");
         return;
-
       }
+
+      if (!selectedFile && text.length > currentLimit) {
+        setScanError(`Input exceeds the ${currentLimit} character limit for ${scanType.toUpperCase()} scanning.`);
+        return;
+      }
+
+      setScanning(true);
 
       let res;
 
@@ -69,7 +96,7 @@ function QuickScanner() {
     break;   // <-- ADD THIS
 
   case "password":
-    res = await checkPassword(input);
+    res = await checkPassword(input, getCurrentUser()?.id);
     break;
 
   default:
@@ -77,12 +104,14 @@ function QuickScanner() {
 }
 
       if (res.status === "Error") {
-  alert(res.message);
-  setResult(null);
-  return;
-}
+        setScanError(res.message || "Scan failed. Please try again.");
+        setResult(null);
+        return;
+      }
 
 setResult(res);
+
+await refreshDashboard();
 
 if (scanType === "email") {
 
@@ -157,34 +186,45 @@ else if (scanType === "password") {
   "info"
 );
 
+} else if (selectedFile) {
+  // File upload scan result notification
+  if (res.status === "Phishing") {
+    addNotification(
+      "📄 Malicious File",
+      "GuardianX detected phishing content in the uploaded file.",
+      "danger"
+    );
+  } else if (res.status === "Suspicious") {
+    addNotification(
+      "📄 Suspicious File",
+      "The uploaded file contains suspicious content.",
+      "warning"
+    );
+  } else {
+    addNotification(
+      "📄 File Scanned",
+      "The uploaded file appears to be clean.",
+      "success"
+    );
+  }
 }
-
-} catch (error) {
-
-  console.log(error);
-
-  alert("Unable to scan.");
-
-}
-
-};
-
-  const handleDownloadReport = async () => {
-
-    if (!result) return;
-
-    try {
-
-      await downloadReport(result);
 
     } catch (error) {
-
       console.log(error);
-
-      alert("Unable to download report.");
-
+      setScanError("Unable to scan. Please check system connection.");
+    } finally {
+      setScanning(false);
     }
+  };
 
+  const handleDownloadReport = async () => {
+    if (!result) return;
+    try {
+      await downloadReport(result);
+    } catch (error) {
+      console.log(error);
+      setScanError("Unable to download report. Please try again.");
+    }
   };
 
   return (
@@ -214,8 +254,16 @@ else if (scanType === "password") {
 
     <button
       key={item.key}
-      onClick={() => setScanType(item.key)}
-      className={`rounded-xl p-6 border transition-all duration-300 hover:scale-105
+      onClick={() => {
+        if (scanType !== item.key) {
+          setScanType(item.key);
+          setText("");
+          setResult(null);
+          setSelectedFile(null);
+          setScanError("");
+        }
+      }}
+      className={`rounded-xl p-4 border transition-all duration-300 hover:scale-105
 
       ${
         scanType === item.key
@@ -224,11 +272,11 @@ else if (scanType === "password") {
       }`}
     >
 
-      <div className="text-5xl">
+      <div className="text-3xl">
         {item.icon}
       </div>
 
-      <h2 className="mt-4 text-xl font-bold">
+      <h2 className="mt-2 text-lg font-bold">
         {item.title}
       </h2>
 
@@ -239,16 +287,39 @@ else if (scanType === "password") {
 </div>
 
       <textarea
-
         value={text}
-
-        onChange={(e) => setText(e.target.value)}
-
+        onChange={(e) => {
+          setText(e.target.value);
+          if (scanError) setScanError("");
+        }}
         placeholder={`Paste your ${scanType.toUpperCase()} here for AI security analysis...`}
-
-        className="w-full h-56 bg-[#09090B] rounded-xl mt-8 p-6 text-lg"
-
+        className={`w-full h-56 bg-[#09090B] border rounded-xl mt-8 p-6 text-lg outline-none transition-all ${
+          !selectedFile && text.length > currentLimit
+            ? "border-red-500/50 focus:border-red-500"
+            : "border-zinc-800 focus:border-cyan-500"
+        }`}
       />
+
+      {/* Character counter and limit warning */}
+      {!selectedFile && (
+        <div className="flex justify-between mt-2 font-cyber text-xs">
+          <p className={text.length > currentLimit * 0.9 ? "text-yellow-400" : "text-zinc-500"}>
+            {text.length}/{currentLimit} characters
+          </p>
+          {text.length > currentLimit && (
+            <p className="text-red-400">
+              Input too long — max {currentLimit} characters for {scanType.toUpperCase()}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* On-screen error panel */}
+      {scanError && (
+        <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-cyber text-sm flex items-center gap-2">
+          🚨 {scanError}
+        </div>
+      )}
 
       <div className="mt-8">
 
@@ -339,15 +410,15 @@ else if (scanType === "password") {
       </div>
 
       <button
-
         onClick={handleScan}
-
-        className="w-full mt-8 bg-cyan-500 hover:bg-cyan-600 text-black font-bold py-5 rounded-xl text-lg transition hover:scale-[1.02]"
-
+        disabled={scanning || (!selectedFile && text.length > currentLimit)}
+        className={`w-full mt-8 font-bold font-cyber tracking-wider py-5 rounded-xl text-lg transition ${
+          scanning || (!selectedFile && text.length > currentLimit)
+            ? "bg-zinc-800 cursor-not-allowed text-zinc-500"
+            : "bg-cyan-500 hover:bg-cyan-600 text-black hover:scale-[1.02] glow-cyan"
+        }`}
       >
-
-        🚀 Scan with GuardianX AI
-
+        {scanning ? "⚙ SCANNING..." : "🚀 Scan with GuardianX AI"}
       </button>
             {/* Result */}
 

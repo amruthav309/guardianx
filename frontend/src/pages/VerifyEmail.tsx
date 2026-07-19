@@ -1,133 +1,138 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { verifyEmail, resendOTP } from "../services/auth";
+import { FaShieldAlt, FaEnvelope } from "react-icons/fa";
 
 function VerifyEmail() {
-
   const navigate = useNavigate();
-
   const location = useLocation();
-
   const email = location.state?.email || "";
 
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [msgType, setMsgType] = useState<"success" | "error">("success");
 
   const verifyOTP = async () => {
-
-    const response = await fetch(
-      "http://127.0.0.1:8000/users/verify-email",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email,
-          otp
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-
-      alert("Email Verified Successfully.");
-
-      navigate("/login");
-
-    } else {
-
-      alert(data.detail);
-
+    setMessage("");
+    if (otp.length !== 6) {
+      setMsgType("error");
+      setMessage("Please enter a valid 6-digit OTP.");
+      return;
     }
-
+    try {
+      setLoading(true);
+      await verifyEmail(email, otp);
+      setMsgType("success");
+      setMessage("Email Verified Successfully. Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err: any) {
+      setMsgType("error");
+      setMessage(
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Invalid or expired OTP."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const resendOTP = async () => {
-
-    await fetch(
-      "http://127.0.0.1:8000/users/resend-otp",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email
-        })
-      }
-    );
-
-    alert("OTP Sent Again.");
-
+  const resendOTPHandler = async () => {
+    setMessage("");
+    try {
+      setResending(true);
+      await resendOTP(email);
+      setMsgType("success");
+      setMessage("OTP has been resent. Check your email inbox.");
+    } catch {
+      setMsgType("error");
+      setMessage("Unable to resend OTP. Please try again.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
+    <div className="min-h-screen flex justify-center items-center bg-[#070709] text-white relative overflow-hidden page-enter">
+      {/* Background grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293710_1px,transparent_1px),linear-gradient(to_bottom,#1f293710_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
 
-    <div className="min-h-screen flex justify-center items-center bg-[#09090B]">
+      <div className="glass-panel-cyan w-[440px] rounded-2xl border border-cyan-500/25 p-8 shadow-2xl relative z-20">
+        {/* Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-xl bg-cyan-500/15 flex items-center justify-center border border-cyan-500/30 glow-cyan mb-4">
+            <FaShieldAlt className="text-3xl text-cyan-400" />
+          </div>
+          <h1 className="text-3xl font-bold font-cyber text-cyan-400 glow-text-cyan tracking-wider">
+            GUARDIAN<span className="text-white">X</span>
+          </h1>
+          <p className="text-zinc-400 text-sm mt-1">EMAIL IDENTITY VERIFICATION</p>
+        </div>
 
-      <div className="bg-[#161616] rounded-xl p-10 w-[420px]">
+        {/* Email display */}
+        <div className="flex items-center gap-3 bg-[#0e0e11] border border-zinc-800 rounded-xl p-4 mb-6">
+          <FaEnvelope className="text-cyan-400 text-lg flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-zinc-500 font-cyber uppercase">OTP Sent To</p>
+            <p className="text-sm text-emerald-400 font-mono mt-0.5">{email || "your email"}</p>
+          </div>
+        </div>
 
-        <h1 className="text-3xl text-cyan-400 font-bold">
+        {/* OTP Input */}
+        <div className="mb-2">
+          <label className="text-xs text-zinc-400 block mb-2 uppercase font-cyber">6-Digit OTP Code</label>
+          <input
+            className="w-full bg-[#0e0e11] border border-zinc-800 rounded-xl p-4 text-center tracking-[12px] text-xl font-mono outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 text-white transition-all"
+            placeholder="• • • • • •"
+            maxLength={6}
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+          />
+        </div>
+        <p className="text-[10px] text-zinc-600 font-cyber mb-6 text-center">Enter the 6-digit code sent to your email. Valid for 5 minutes.</p>
 
-          Verify Email
+        {/* Message Banner */}
+        {message && (
+          <div className={`mb-6 p-3 rounded-xl border text-xs font-cyber ${
+            msgType === "success"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              : "bg-red-500/10 border-red-500/20 text-red-400"
+          }`}>
+            {msgType === "success" ? "✔" : "⚠"} {message}
+          </div>
+        )}
 
-        </h1>
-
-        <p className="text-zinc-400 mt-3">
-
-          OTP sent to
-
-        </p>
-
-        <p className="text-green-400">
-
-          {email}
-
-        </p>
-
-        <input
-
-          className="w-full mt-8 bg-[#202020] rounded-lg p-4"
-
-          placeholder="Enter 6-digit OTP"
-
-          value={otp}
-
-          onChange={(e)=>setOtp(e.target.value)}
-
-        />
-
+        {/* Verify Button */}
         <button
-
           onClick={verifyOTP}
-
-          className="w-full mt-6 bg-cyan-500 text-black font-bold rounded-lg p-3"
-
+          disabled={loading || otp.length !== 6}
+          className="w-full bg-cyan-500 hover:bg-cyan-400 disabled:bg-cyan-700/40 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl font-cyber tracking-widest text-sm transition-all glow-cyan cursor-pointer"
         >
+          {loading ? "VERIFYING..." : "VERIFY IDENTITY"}
+        </button>
 
-          Verify
-
+        {/* Resend OTP */}
+        <button
+          onClick={resendOTPHandler}
+          disabled={resending}
+          className="w-full mt-3 border border-zinc-700 hover:border-cyan-500/50 text-zinc-400 hover:text-cyan-400 py-3 rounded-xl font-cyber text-sm transition-all cursor-pointer"
+        >
+          {resending ? "Sending..." : "Resend OTP"}
         </button>
 
         <button
-
-          onClick={resendOTP}
-
-          className="w-full mt-4 bg-zinc-700 rounded-lg p-3"
-
+          onClick={() => navigate("/login")}
+          className="w-full mt-4 text-zinc-600 hover:text-cyan-400 font-cyber text-xs transition-colors cursor-pointer"
         >
-
-          Resend OTP
-
+          ← Back to Login
         </button>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default VerifyEmail;

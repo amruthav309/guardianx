@@ -37,6 +37,7 @@ class ChangePassword(BaseModel):
 class UpdateProfile(BaseModel):
     name: str
     username: str
+    profile_pic: str = None
 
 
 # ==========================

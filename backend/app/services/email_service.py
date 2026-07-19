@@ -17,6 +17,7 @@ def generate_otp():
 
 
 def send_verification_email(receiver_email: str, otp: str):
+    print(f"\n[EMAIL SIMULATION] Sent OTP Verification Code: {otp} to {receiver_email}\n")
 
     subject = "GuardianX - Email Verification"
 

@@ -1,34 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaShieldAlt, FaCheckCircle } from "react-icons/fa";
-import { logoutUser } from "../services/auth";
+import { FaShieldAlt, FaCheckCircle, FaTerminal } from "react-icons/fa";
 
 function LogoutScreen() {
-
   const navigate = useNavigate();
-
   const [step, setStep] = useState(0);
 
   const messages = [
-    "Terminating Secure Session...",
-    "Clearing Authentication Tokens...",
-    "Encrypting User Data...",
-    "Session Successfully Secured"
+    "Decrypting Security Tokens...",
+    "Securing Local History Database...",
+    "Clearing Cache and Ephemeral States...",
+    "Session Securely Sealed"
   ];
 
   useEffect(() => {
+    // Clear active session identifiers, keeping switch list active
+    localStorage.removeItem("guardianx_user");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("guardianx_dashboard"); // Clear cached dashboard statistics
 
-    logoutUser();
-
-    const timer1 = setTimeout(() => setStep(1), 1000);
-
-    const timer2 = setTimeout(() => setStep(2), 2000);
-
-    const timer3 = setTimeout(() => setStep(3), 3000);
-
+    const timer1 = setTimeout(() => setStep(1), 800);
+    const timer2 = setTimeout(() => setStep(2), 1600);
+    const timer3 = setTimeout(() => setStep(3), 2400);
     const timer4 = setTimeout(() => {
       navigate("/login");
-    }, 4500);
+    }, 3500);
 
     return () => {
       clearTimeout(timer1);
@@ -36,89 +33,66 @@ function LogoutScreen() {
       clearTimeout(timer3);
       clearTimeout(timer4);
     };
-
   }, [navigate]);
 
-    return (
+  return (
+    <div className="min-h-screen bg-[#070709] flex items-center justify-center overflow-hidden page-enter">
+      {/* Laser grid layout */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293708_1px,transparent_1px),linear-gradient(to_bottom,#1f293708_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
+      
+      {/* Ambient background glows */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-3xl"></div>
 
-    <div className="min-h-screen bg-[#09090B] flex items-center justify-center overflow-hidden">
-
-      <div className="w-[500px] bg-[#161616] rounded-3xl border border-cyan-500/30 shadow-[0_0_40px_rgba(0,255,255,0.25)] p-10 text-center">
-
-        <div className="flex justify-center">
-
-          {step < 3 ? (
-
-            <FaShieldAlt
-              size={90}
-              className="text-cyan-400 animate-pulse"
-            />
-
-          ) : (
-
-            <FaCheckCircle
-              size={90}
-              className="text-green-400 animate-bounce"
-            />
-
-          )}
-
+      <div className="w-[500px] glass-panel-violet rounded-2xl border border-red-500/20 shadow-2xl p-10 text-center relative z-20">
+        <div className="flex justify-center mb-6">
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center border transition-all duration-500 ${
+            step < 3 
+              ? "bg-red-500/10 border-red-500/30 text-red-400 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
+              : "bg-green-500/10 border-green-500/30 text-green-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+          }`}>
+            {step < 3 ? (
+              <FaShieldAlt size={45} />
+            ) : (
+              <FaCheckCircle size={45} />
+            )}
+          </div>
         </div>
 
-        <h1 className="text-5xl font-bold text-cyan-400 mt-6">
-
-          GuardianX
-
+        <h1 className="text-3xl font-bold font-cyber tracking-wider text-zinc-100">
+          GUARDIAN<span className="text-red-500">X</span>
         </h1>
-
-        <p className="text-zinc-400 mt-2">
-
-          AI Powered Cyber Security Platform
-
+        
+        <p className="text-zinc-500 text-xs mt-1 uppercase tracking-widest font-cyber">
+          Secured Connection Teardown
         </p>
 
-        <div className="mt-10 h-14 flex items-center justify-center">
-
-          <h2 className="text-2xl font-semibold text-white">
-
-            {messages[step]}
-
-          </h2>
-
+        {/* Terminal log text */}
+        <div className="mt-10 h-16 bg-[#0c0c0e] border border-zinc-800 rounded-lg p-3 flex items-center justify-start gap-3 font-mono text-left">
+          <FaTerminal className="text-red-500 animate-pulse text-sm" />
+          <span className="text-xs text-zinc-300">
+            {step < 3 ? "> " : "$ "}{messages[step]}
+          </span>
         </div>
 
-        <div className="mt-10">
-
-          <div className="w-full h-3 rounded-full bg-[#2b2b2b] overflow-hidden">
-
+        <div className="mt-8">
+          <div className="w-full h-1.5 rounded-full bg-[#1b1b22] overflow-hidden">
             <div
-              className={`h-full bg-cyan-400 transition-all duration-1000 ${
-                step === 0
-                  ? "w-[25%]"
-                  : step === 1
-                  ? "w-[50%]"
-                  : step === 2
-                  ? "w-[75%]"
-                  : "w-full"
+              className={`h-full transition-all duration-700 ${
+                step === 3 ? "bg-green-500" : "bg-red-500"
               }`}
+              style={{
+                width: step === 0 ? "25%" : step === 1 ? "50%" : step === 2 ? "75%" : "100%"
+              }}
             />
-
           </div>
-
-          <p className="text-zinc-500 mt-4">
-
-            Redirecting to Login...
-
+          
+          <p className="text-zinc-500 text-xs mt-4 uppercase font-cyber tracking-widest blink-text">
+            Releasing session keys...
           </p>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default LogoutScreen;

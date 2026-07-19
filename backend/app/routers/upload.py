@@ -25,6 +25,7 @@ pytesseract.pytesseract.tesseract_cmd = (
 
 @router.post("/file")
 async def upload_file(
+    user_id: int = None,
     db: Session = Depends(get_db),
     file: UploadFile = File(...)
 ):
@@ -50,11 +51,15 @@ async def upload_file(
         ".jpeg"
     ]:
 
-        image = Image.open(filepath)
+        try:
+            image = Image.open(filepath)
 
-        text = pytesseract.image_to_string(
-            image
-        )
+            text = pytesseract.image_to_string(
+                image
+            )
+        except Exception as ocr_err:
+            print(f"OCR processing failed (Tesseract may not be installed): {ocr_err}")
+            text = "[OCR Analysis Error: Tesseract-OCR is not installed or configured correctly on the server. Image text extraction skipped.]"
 
     else:
 
@@ -99,13 +104,15 @@ async def upload_file(
         status = "Safe"
         confidence = 92
 
-    save_history(
-        db=db,
-        scan_type="File",
-        filename=file.filename,
-        status=status,
-        confidence=confidence,
-    )
+    if user_id:
+        save_history(
+            db=db,
+            user_id=user_id,
+            scan_type="File",
+            filename=file.filename,
+            status=status,
+            confidence=confidence,
+        )
 
     advisor = generate_advice(
         status,

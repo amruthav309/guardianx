@@ -1,58 +1,36 @@
-import { ReactNode, useState } from "react";
+import { type ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
-interface AppLayoutProps {
+interface Props {
   children: ReactNode;
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex min-h-screen bg-[#09090B]">
-
-      {/* Desktop Sidebar */}
-      <div
-        className={`
-          transition-all duration-300
-          ${sidebarOpen ? "w-64" : "w-20"}
-          hidden lg:block
-        `}
-      >
-        <Sidebar />
-      </div>
-
-      {/* Mobile Sidebar */}
+    <div className="flex min-h-screen bg-[#09090B] text-white">
+      {/* Sidebar */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
-
-          <div className="w-64">
-            <Sidebar />
-          </div>
-
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setSidebarOpen(false)}
-          />
-
+        <div className="fixed left-0 top-0 z-40 h-screen">
+          <Sidebar />
         </div>
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          sidebarOpen ? "lg:ml-64" : "ml-0"
+        }`}
+      >
         <Topbar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-
+        <main className="p-5">{children}</main>
       </div>
-
     </div>
   );
 }

@@ -61,6 +61,11 @@ class User(Base):
         default="Active"
     )
 
+    profile_pic = Column(
+        String(255),
+        nullable=True
+    )
+
     created_at = Column(
         DateTime,
         server_default=func.now()
