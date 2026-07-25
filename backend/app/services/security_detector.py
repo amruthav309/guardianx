@@ -203,7 +203,8 @@ def detect_credentials(text):
 
     for word in CREDENTIAL_WORDS:
 
-        if word in text:
+        pattern = rf"\b{re.escape(word)}\b"
+        if re.search(pattern, text):
             score += 20
             reasons.append(f"Credential request: {word}")
 
@@ -222,7 +223,8 @@ def detect_social_engineering(text):
 
     for word in SOCIAL_WORDS:
 
-        if word in text:
+        pattern = rf"\b{re.escape(word)}\b"
+        if re.search(pattern, text):
             score += 10
             reasons.append(f"Social engineering: {word}")
 
@@ -251,7 +253,10 @@ def detect_dangerous_files(text):
 
     for ext in dangerous:
 
-        if ext in text.lower():
+        # Match file extensions attached to a file name (e.g. file.exe, script.js)
+        # Using word boundaries and a dot
+        pattern = rf"\b[\w-]+\.{re.escape(ext[1:])}\b"
+        if re.search(pattern, text.lower()):
             score += 25
             reasons.append(f"Dangerous attachment ({ext})")
 

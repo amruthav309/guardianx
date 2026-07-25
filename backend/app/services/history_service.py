@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.history import History
+from app.utils.timezone import get_ist_now
 
 
 def save_history(
@@ -11,12 +12,13 @@ def save_history(
     confidence: float,
 ):
     history = History(
-    user_id=user_id,
-    scan_type=scan_type,
-    filename=filename,
-    status=status,
-    confidence=confidence,
-)
+        user_id=user_id,
+        scan_type=scan_type,
+        filename=filename,
+        status=status,
+        confidence=confidence,
+        created_at=get_ist_now(),
+    )
 
     db.add(history)
     db.commit()

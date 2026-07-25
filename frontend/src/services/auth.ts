@@ -211,8 +211,24 @@ export const checkPassword = async (
   );
 
   return response.data;
-
 };
+
+
+// ===========================================
+// SECURITY LEVEL UPDATES
+// ===========================================
+
+export const updateSecurityLevel = async (
+  userId: number,
+  securityLevel: string
+) => {
+  const response = await API.put(
+    `/users/security-level/${userId}`,
+    { security_level: securityLevel }
+  );
+  return response.data;
+};
+
 
 
 // ===========================================
@@ -266,39 +282,36 @@ export const getAnalytics = async (userId: number) => {
 // ===========================================
 
 export const getHistory = async () => {
-
   const user = getCurrentUser();
+  if (!user?.id) return [];
 
   const response = await API.get(
     `/history?user_id=${user.id}`
   );
 
   return response.data;
-
 };
 
 export const clearHistory = async () => {
-
   const user = getCurrentUser();
+  if (!user?.id) return { message: "No active user" };
 
   const response = await API.delete(
     `/history/clear?user_id=${user.id}`
   );
 
   return response.data;
-
 };
 
 export const deleteHistory = async (id: number) => {
-
   const user = getCurrentUser();
+  if (!user?.id) return { message: "No active user" };
 
   const response = await API.delete(
     `/history/${id}?user_id=${user.id}`
   );
 
   return response.data;
-
 };
 
 
@@ -359,8 +372,7 @@ export const getCurrentUser = () => {
 
 export const logoutUser = () => {
   localStorage.removeItem("guardianx_user");
-  localStorage.removeItem("userEmail");
-  localStorage.removeItem("rememberMe");
+  localStorage.removeItem("guardianx_dashboard");
 
   window.location.href = "/login";
 };

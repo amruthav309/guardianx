@@ -28,6 +28,7 @@ class UserLogin(BaseModel):
 class ChangePassword(BaseModel):
     email: EmailStr
     new_password: str
+    current_password: str = None
 
 
 # ==========================

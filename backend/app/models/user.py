@@ -66,6 +66,11 @@ class User(Base):
         nullable=True
     )
 
+    security_level = Column(
+        String(50),
+        default="Standard"
+    )
+
     created_at = Column(
         DateTime,
         server_default=func.now()

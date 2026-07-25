@@ -79,7 +79,7 @@ function Register() {
           <h1 className="text-4xl text-cyan-400 font-bold text-center tracking-wider font-cyber glow-text-cyan">
             GUARDIAN<span className="text-white">X</span>
           </h1>
-          <p className="text-center text-zinc-400 text-sm mt-1">CREATE SECURE AGENT ACCOUNT</p>
+          <p className="text-center text-zinc-400 text-sm mt-1">CREATE SECURE USER ACCOUNT</p>
         </div>
 
         {error && (
@@ -99,7 +99,7 @@ function Register() {
             <input
               type="text"
               name="name"
-              placeholder="Agent Full Name"
+              placeholder="User Full Name"
               value={form.name}
               onChange={handleChange}
               required
@@ -197,7 +197,7 @@ function Register() {
         </button>
 
         <p className="text-center text-zinc-500 text-xs mt-6">
-          Already an agent?{" "}
+          Already a user?{" "}
           <Link to="/login" className="text-cyan-400 hover:underline font-cyber">
             Establish Session
           </Link>

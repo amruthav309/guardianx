@@ -8,6 +8,9 @@ load_dotenv()
 # Support direct DATABASE_URL (for production/Render) or build from parts
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if not DATABASE_URL:
     # Build MySQL URL from individual parts (for local dev)
     DATABASE_URL = (

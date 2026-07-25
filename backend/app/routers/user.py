@@ -115,6 +115,8 @@ def login(
 
             "profile_pic": db_user.profile_pic,
 
+            "security_level": db_user.security_level,
+
         }
 
     except HTTPException:
@@ -143,6 +145,7 @@ def update_password(
             db,
             data.email,
             data.new_password,
+            current_password=data.current_password,
         )
 
         if result is None:
@@ -396,3 +399,29 @@ async def upload_avatar(
         "message": "Avatar uploaded successfully.",
         "avatar_url": avatar_url,
     }
+
+
+# ==========================================
+# Update Security Level
+# ==========================================
+
+@router.put("/security-level/{user_id}")
+def update_user_security_level(
+    user_id: int,
+    data: dict,
+    db: Session = Depends(get_db)
+):
+    from app.models.user import User
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    level = data.get("security_level", "Standard")
+    user.security_level = level
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Security level updated successfully.",
+        "security_level": user.security_level
+    }

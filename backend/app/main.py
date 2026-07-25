@@ -14,12 +14,39 @@ from app.routers import upload
 from app.routers import history
 from app.routers import analytics
 from app.routers import report
+from app.routers import admin
 
+from sqlalchemy import text
 from app.database.database import engine, Base
 
 from app.models.user import User
 from app.models.history import History
+from app.models.audit_log import AuditLog
 
+
+# Database Migrations - Dynamically check and add security_level column if not present
+try:
+    with engine.connect() as conn:
+        dialect = engine.dialect.name
+        col_exists = False
+
+        if "sqlite" in dialect:
+            res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            cols = [r[1] for r in res] if res else []
+            col_exists = "security_level" in cols
+        elif "mysql" in dialect:
+            res = conn.execute(text("SHOW COLUMNS FROM users LIKE 'security_level'")).fetchone()
+            col_exists = bool(res)
+        elif "postgres" in dialect:
+            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='security_level'")).fetchone()
+            col_exists = bool(res)
+
+        if not col_exists:
+            conn.execute(text("ALTER TABLE users ADD COLUMN security_level VARCHAR(50) DEFAULT 'Standard'"))
+            conn.commit()
+            print("Successfully migrated database: added security_level column to users table.")
+except Exception as e:
+    print(f"Database migration skipped/failed: {e}")
 
 Base.metadata.create_all(bind=engine)
 
@@ -34,7 +61,7 @@ Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS — allow local dev and production frontend URL
-FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 
 allow_origins = [
     "http://localhost:5173",
@@ -45,6 +72,9 @@ allow_origins = [
 
 if FRONTEND_URL:
     allow_origins.append(FRONTEND_URL)
+    # Also allow www subdomain variant
+    if FRONTEND_URL.startswith("https://"):
+        allow_origins.append(FRONTEND_URL.replace("https://", "https://www."))
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,6 +143,13 @@ app.include_router(
     report.router,
     prefix="/report",
     tags=["PDF Report"]
+)
+
+# Admin Portal
+app.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["Admin Portal"]
 )
 
 @app.get("/")

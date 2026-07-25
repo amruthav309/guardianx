@@ -124,7 +124,8 @@ def login_user(
             "Please verify your email first."
         )
 
-    user.last_login = datetime.now()
+    from app.utils.timezone import get_ist_now
+    user.last_login = get_ist_now()
 
     user.login_count += 1
 
@@ -234,6 +235,7 @@ def change_password(
     db: Session,
     email: str,
     new_password: str,
+    current_password: str = None,
 ):
     validate_password_strength(new_password)
 
@@ -246,6 +248,11 @@ def change_password(
     if user is None:
         return None
 
+    # If current_password is provided, verify it first (for logged-in change password option)
+    if current_password is not None:
+        from app.utils.security import verify_password
+        if not verify_password(current_password, user.password):
+            raise Exception("Incorrect current password.")
 
     user.password = hash_password(new_password)
 

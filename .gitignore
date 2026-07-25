@@ -7,8 +7,12 @@ __pycache__/
 venv/
 .venv/
 
-# Environment Variables
+# Environment Variables — ignore all .env files with secrets
 .env
+.env.local
+.env.*.local
+# Allow frontend .env.production (only contains public VITE_ vars)
+!frontend/.env.production
 
 # VS Code
 .vscode/

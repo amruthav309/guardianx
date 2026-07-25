@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 from datetime import datetime
 from app.database.database import engine
+from app.utils.timezone import get_ist_str
 
 router = APIRouter()
 
@@ -62,7 +63,7 @@ def dashboard_analytics(user_id: int):
 
         weekly_rows = connection.execute(
             text("""
-                SELECT created_at
+                SELECT created_at, status
                 FROM history
                 WHERE user_id=:user_id
                 ORDER BY created_at
@@ -71,24 +72,21 @@ def dashboard_analytics(user_id: int):
         ).fetchall()
 
         days = {
-            "Mon": 0,
-            "Tue": 0,
-            "Wed": 0,
-            "Thu": 0,
-            "Fri": 0,
-            "Sat": 0,
-            "Sun": 0,
+            "Mon": {"scans": 0, "threats": 0},
+            "Tue": {"scans": 0, "threats": 0},
+            "Wed": {"scans": 0, "threats": 0},
+            "Thu": {"scans": 0, "threats": 0},
+            "Fri": {"scans": 0, "threats": 0},
+            "Sat": {"scans": 0, "threats": 0},
+            "Sun": {"scans": 0, "threats": 0},
         }
 
         for row in weekly_rows:
-
             created = row.created_at
-
             if created is None:
                 continue
 
             if isinstance(created, str):
-
                 try:
                     created = datetime.fromisoformat(created)
                 except:
@@ -103,14 +101,17 @@ def dashboard_analytics(user_id: int):
             day = created.strftime("%a")
 
             if day in days:
-                days[day] += 1
+                days[day]["scans"] += 1
+                if row.status == "Phishing":
+                    days[day]["threats"] += 1
 
         weekly_trend = [
             {
                 "day": day,
-                "scans": count
+                "scans": info["scans"],
+                "threats": info["threats"]
             }
-            for day, count in days.items()
+            for day, info in days.items()
         ]
 
         total_scans = total or 0
@@ -152,6 +153,6 @@ def dashboard_analytics(user_id: int):
             "scanner_status": "READY",
             "database_status": "ONLINE",
             "session_status": "SECURE",
-            "last_sync": datetime.now().strftime("%I:%M:%S %p"),
+            "last_sync": get_ist_str(),
             "weekly_trend": weekly_trend,
         }

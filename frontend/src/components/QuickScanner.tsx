@@ -11,6 +11,7 @@ import {
   getAnalytics,
   getHistory,
 } from "../services/auth";
+import { FaShieldAlt, FaEnvelope, FaGlobe, FaSms, FaKey, FaFolderOpen, FaRocket, FaFileDownload, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 
 function QuickScanner() {
 
@@ -31,77 +32,78 @@ function QuickScanner() {
   const currentLimit = MAX_LIMITS[scanType] ?? 5000;
 
   const refreshDashboard = async () => {
-  const user = getCurrentUser();
+    const user = getCurrentUser();
 
-  if (!user) return;
+    if (!user) return;
 
-  const analytics = await getAnalytics(user.id);
-  const history = await getHistory();
+    const analytics = await getAnalytics(user.id);
+    const history = await getHistory();
 
-  localStorage.setItem(
-    "guardianx_dashboard",
-    JSON.stringify({
-      analytics,
-      history,
-    })
-  );
-};
+    localStorage.setItem(
+      "guardianx_dashboard",
+      JSON.stringify({
+        analytics,
+        history,
+      })
+    );
+  };
 
   const handleScan = async () => {
     setScanError("");
 
     try {
       let input = text;
-
-      if (selectedFile) {
-        const uploaded = await uploadFile(selectedFile, getCurrentUser()?.id);
-        input = uploaded.content;
-      }
-
-      if (!input.trim()) {
-        setScanError("Please paste text or upload a file.");
-        return;
-      }
-
-      if (!selectedFile && text.length > currentLimit) {
-        setScanError(`Input exceeds the ${currentLimit} character limit for ${scanType.toUpperCase()} scanning.`);
-        return;
-      }
-
-      setScanning(true);
-
       let res;
 
-      switch (scanType) {
+      if (selectedFile) {
+        setScanning(true);
+        res = await uploadFile(selectedFile, getCurrentUser()?.id);
+        input = res.content;
+      } else {
+        if (!input.trim()) {
+          setScanError("Please paste text or URL to analyze.");
+          return;
+        }
 
-  case "email":
-    res = await scanEmail({
-      email: input,
-      user_id: getCurrentUser().id
-    });
-    break;   // <-- ADD THIS
+        if (text.length > currentLimit) {
+          setScanError(`Input exceeds the ${currentLimit} character limit for ${scanType.toUpperCase()} scanning.`);
+          return;
+        }
 
-  case "url":
-    res = await scanURL({
-      url: input,
-      user_id: getCurrentUser().id,
-    });
-    break;
+        setScanning(true);
 
-  case "sms":
-    res = await scanSMS({
-      sms: input,
-      user_id: getCurrentUser().id
-    });
-    break;   // <-- ADD THIS
+        const userId = getCurrentUser()?.id;
 
-  case "password":
-    res = await checkPassword(input, getCurrentUser()?.id);
-    break;
+        switch (scanType) {
+          case "email":
+            res = await scanEmail({
+              email: input,
+              user_id: userId,
+            });
+            break;
 
-  default:
-    return;
-}
+          case "url":
+            res = await scanURL({
+              url: input,
+              user_id: userId,
+            });
+            break;
+
+          case "sms":
+            res = await scanSMS({
+              sms: input,
+              user_id: userId,
+            });
+            break;
+
+          case "password":
+            res = await checkPassword(input, userId);
+            break;
+
+          default:
+            return;
+        }
+      }
 
       if (res.status === "Error") {
         setScanError(res.message || "Scan failed. Please try again.");
@@ -109,105 +111,98 @@ function QuickScanner() {
         return;
       }
 
-setResult(res);
+      setResult(res);
 
-await refreshDashboard();
+      await refreshDashboard();
+      window.dispatchEvent(new Event("guardianx_scan_completed"));
 
-if (scanType === "email") {
-
-  if (res.status === "Phishing") {
-
-    addNotification(
-  "🚨 Phishing Email",
-  "GuardianX detected a phishing email.",
-  "danger"
-);
-
-  } else {
-
-    addNotification(
-  "✅ Safe Email",
-  "Email is safe.",
-  "success"
-);
-
-  }
-
-}
-
-else if (scanType === "url") {
-
-  if (res.status === "Phishing") {
-
-    addNotification(
-  "🌐 Malicious URL",
-  "GuardianX blocked a malicious URL.",
-  "danger"
-);
-
-  } else {
-
-    addNotification(
-  "✅ Safe URL",
-  "URL is safe.",
-  "success"
-);
-
-  }
-
-}
-
-else if (scanType === "sms") {
-
-  if (res.status === "Phishing") {
-
-    addNotification(
-  "📱 Suspicious SMS",
-  "GuardianX detected a phishing SMS.",
-  "danger"
-);
-  } else {
-
-    addNotification(
-  "✅ Safe SMS",
-  "SMS is safe.",
-  "success"
-);
-
-  }
-
-}
-
-else if (scanType === "password") {
-
-  addNotification(
-  "🔑 Password Checked",
-  `Strength: ${res.strength}`,
-  "info"
-);
-
-} else if (selectedFile) {
-  // File upload scan result notification
-  if (res.status === "Phishing") {
-    addNotification(
-      "📄 Malicious File",
-      "GuardianX detected phishing content in the uploaded file.",
-      "danger"
-    );
-  } else if (res.status === "Suspicious") {
-    addNotification(
-      "📄 Suspicious File",
-      "The uploaded file contains suspicious content.",
-      "warning"
-    );
-  } else {
-    addNotification(
-      "📄 File Scanned",
-      "The uploaded file appears to be clean.",
-      "success"
-    );
-  }
-}
+      if (selectedFile) {
+        if (res.status === "Phishing") {
+          addNotification(
+            "📄 Malicious File",
+            "GuardianX detected phishing content in the uploaded file.",
+            "danger"
+          );
+        } else if (res.status === "Suspicious") {
+          addNotification(
+            "📄 Suspicious File",
+            "The uploaded file contains suspicious content.",
+            "warning"
+          );
+        } else {
+          addNotification(
+            "📄 File Scanned",
+            "The uploaded file appears to be clean.",
+            "success"
+          );
+        }
+      } else if (scanType === "email") {
+        if (res.status === "Phishing") {
+          addNotification(
+            "🚨 Phishing Email",
+            "GuardianX detected a phishing email.",
+            "danger"
+          );
+        } else if (res.status === "Suspicious") {
+          addNotification(
+            "⚠️ Suspicious Email",
+            "GuardianX detected a suspicious email.",
+            "warning"
+          );
+        } else {
+          addNotification(
+            "✅ Safe Email",
+            "Email is safe.",
+            "success"
+          );
+        }
+      } else if (scanType === "url") {
+        if (res.status === "Phishing") {
+          addNotification(
+            "🌐 Malicious URL",
+            "GuardianX blocked a malicious URL.",
+            "danger"
+          );
+        } else if (res.status === "Suspicious") {
+          addNotification(
+            "⚠️ Suspicious URL",
+            "GuardianX detected a suspicious URL.",
+            "warning"
+          );
+        } else {
+          addNotification(
+            "✅ Safe URL",
+            "URL is safe.",
+            "success"
+          );
+        }
+      } else if (scanType === "sms") {
+        if (res.status === "Phishing") {
+          addNotification(
+            "📱 Suspicious SMS",
+            "GuardianX detected a phishing SMS.",
+            "danger"
+          );
+        } else if (res.status === "Suspicious") {
+          addNotification(
+            "⚠️ Suspicious SMS",
+            "GuardianX detected a suspicious SMS.",
+            "warning"
+          );
+        } else {
+          addNotification(
+            "✅ Safe SMS",
+            "SMS is safe.",
+            "success"
+          );
+        }
+      } else if (scanType === "password") {
+        addNotification(
+          "🔑 Password Checked",
+          `Strength: ${res.strength}`,
+          "info"
+        );
+      }
 
     } catch (error) {
       console.log(error);
@@ -229,432 +224,338 @@ else if (scanType === "password") {
 
   return (
 
-    <div className="bg-[#161616] rounded-2xl p-8 mt-10 shadow-xl">
+    <div className="bg-[#0f0609]/95 rounded-2xl p-6 sm:p-8 border border-red-600/25 shadow-2xl relative overflow-hidden">
+      {/* Laser line overlay when scanning */}
+      {scanning && <div className="scanner-line" />}
 
-      <h1 className="text-4xl font-bold text-cyan-400">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-red-600/15 pb-5">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif-header text-red-400 flex items-center gap-2">
+            <span>AI Neural Security Control Panel</span>
+          </h2>
+          <p className="text-zinc-500 text-xs mt-1">
+            Select a target vector or upload a document for real-time heuristic threat detection.
+          </p>
+        </div>
 
-        🔎 Quick Scanner
-
-      </h1>
-
-      <p className="text-zinc-400 mt-3">
-
-        Scan emails, URLs, SMS, passwords or uploaded files.
-
-      </p>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
-
-  {[
-    { key: "email", icon: "📧", title: "Email" },
-    { key: "url", icon: "🌐", title: "URL" },
-    { key: "sms", icon: "💬", title: "SMS" },
-    { key: "password", icon: "🔑", title: "Password" },
-  ].map((item) => (
-
-    <button
-      key={item.key}
-      onClick={() => {
-        if (scanType !== item.key) {
-          setScanType(item.key);
-          setText("");
-          setResult(null);
-          setSelectedFile(null);
-          setScanError("");
-        }
-      }}
-      className={`rounded-xl p-4 border transition-all duration-300 hover:scale-105
-
-      ${
-        scanType === item.key
-          ? "border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_#06b6d4]"
-          : "border-zinc-700 bg-[#202020]"
-      }`}
-    >
-
-      <div className="text-3xl">
-        {item.icon}
+        <span className="text-xs font-cyber px-3 py-1 rounded-full bg-red-600/15 border border-red-600/30 text-red-400 w-fit">
+          Live AI Engine Active
+        </span>
       </div>
 
-      <h2 className="mt-2 text-lg font-bold">
-        {item.title}
-      </h2>
-
-    </button>
-
-  ))}
-
-</div>
-
-      <textarea
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          if (scanError) setScanError("");
-        }}
-        placeholder={`Paste your ${scanType.toUpperCase()} here for AI security analysis...`}
-        className={`w-full h-56 bg-[#09090B] border rounded-xl mt-8 p-6 text-lg outline-none transition-all ${
-          !selectedFile && text.length > currentLimit
-            ? "border-red-500/50 focus:border-red-500"
-            : "border-zinc-800 focus:border-cyan-500"
-        }`}
-      />
-
-      {/* Character counter and limit warning */}
-      {!selectedFile && (
-        <div className="flex justify-between mt-2 font-cyber text-xs">
-          <p className={text.length > currentLimit * 0.9 ? "text-yellow-400" : "text-zinc-500"}>
-            {text.length}/{currentLimit} characters
-          </p>
-          {text.length > currentLimit && (
-            <p className="text-red-400">
-              Input too long — max {currentLimit} characters for {scanType.toUpperCase()}
+      {/* Vector Selector Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {[
+          { key: "email", icon: <FaEnvelope />, title: "Email Phishing", desc: "Text & Header Analysis" },
+          { key: "url", icon: <FaGlobe />, title: "Malicious URL", desc: "Domain & Link Safety" },
+          { key: "sms", icon: <FaSms />, title: "Smishing SMS", desc: "Text Threat Detection" },
+          { key: "password", icon: <FaKey />, title: "Password Strength", desc: "Entropy & Breach Check" },
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={() => {
+              if (scanType !== item.key) {
+                setScanType(item.key);
+                setText("");
+                setResult(null);
+                setSelectedFile(null);
+                setScanError("");
+              }
+            }}
+            className={`rounded-2xl p-4 border text-left transition-all duration-300 cursor-pointer ${
+              scanType === item.key
+                ? "border-red-500 bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-600/25 font-bold"
+                : "border-red-600/15 bg-[#0a0407] text-zinc-300 hover:bg-red-950/30 hover:border-red-600/30"
+            }`}
+          >
+            <div className={`text-xl mb-2 ${scanType === item.key ? "text-white" : "text-red-400"}`}>
+              {item.icon}
+            </div>
+            <h3 className={`text-sm font-bold font-cyber ${scanType === item.key ? "text-white" : "text-zinc-100"}`}>
+              {item.title}
+            </h3>
+            <p className={`text-[10px] font-sans mt-0.5 ${scanType === item.key ? "text-red-100" : "text-zinc-500"}`}>
+              {item.desc}
             </p>
-          )}
-        </div>
-      )}
+          </button>
+        ))}
+      </div>
 
-      {/* On-screen error panel */}
+      {/* Input Textarea Container */}
+      <div className="mt-6">
+        <textarea
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (scanError) setScanError("");
+          }}
+          placeholder={`Paste your target ${scanType.toUpperCase()} content here for GuardianX neural threat inspection...`}
+          className={`w-full h-44 bg-[#080e18] border rounded-2xl p-4 text-sm font-mono text-slate-100 outline-none transition-all ${
+            !selectedFile && text.length > currentLimit
+              ? "border-rose-500/50 focus:border-rose-500"
+              : "border-red-600/20 focus:border-red-500"
+          }`}
+        />
+
+        {/* Character counter */}
+        {!selectedFile && (
+          <div className="flex justify-between mt-2 font-cyber text-xs">
+            <p className={text.length > currentLimit * 0.9 ? "text-amber-400" : "text-red-400/60"}>
+              {text.length}/{currentLimit} characters
+            </p>
+            {text.length > currentLimit && (
+              <p className="text-rose-400">
+                Input exceeds maximum limit ({currentLimit} chars)
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Error message box */}
       {scanError && (
-        <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-cyber text-sm flex items-center gap-2">
-          🚨 {scanError}
+        <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/25 rounded-xl text-rose-400 font-cyber text-xs flex items-center gap-2">
+          <FaExclamationTriangle /> {scanError}
         </div>
       )}
 
-      <div className="mt-8">
-
-        <label className="text-cyan-400 text-xl font-bold">
-
-          Upload File
-
-        </label>
+      {/* File Upload Drop Zone */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-cyber font-bold text-red-400 flex items-center gap-1.5">
+            <FaFolderOpen /> <span>Upload Document File for Inspection</span>
+          </label>
+          <span className="text-[10px] text-zinc-500 font-mono">Supports TXT, PDF, DOCX, EML, PNG, JPG</span>
+        </div>
 
         <label
-
           htmlFor="fileUpload"
-
-          className="mt-4 flex flex-col justify-center items-center h-56 border-2 border-dashed border-cyan-500 rounded-xl cursor-pointer hover:bg-[#1F1F1F] transition"
-
+          className="flex flex-col justify-center items-center py-6 border-2 border-dashed border-red-600/30 hover:border-red-500/60 bg-[#0a0407]/70 rounded-2xl cursor-pointer hover:bg-red-950/20 transition-all"
         >
-
-          <div className="text-6xl">
-
+          <div className="text-3xl text-red-400 mb-2">
             📂
-
           </div>
-
-          <h2 className="text-2xl font-bold mt-4">
-
-            Click to Upload
-
-          </h2>
-
-          <p className="text-zinc-400">
-
-            TXT • PDF • DOCX • EML • PNG • JPG
-
+          <p className="text-xs font-cyber text-slate-200">
+            Click or drag file to analyze
           </p>
-
         </label>
 
         <input
-
           id="fileUpload"
-
           type="file"
-
           className="hidden"
-
           accept=".txt,.pdf,.docx,.eml,.png,.jpg,.jpeg"
-
           onChange={(e) => {
-
             if (e.target.files?.length) {
-
               setSelectedFile(e.target.files[0]);
-
             }
-
           }}
-
         />
 
         {selectedFile && (
-
-          <div className="bg-[#09090B] rounded-xl mt-5 p-5">
-
-            <h3 className="text-green-400 font-bold">
-
-              ✔ File Selected
-
-            </h3>
-
-            <p className="mt-3">
-
-              <b>Name :</b> {selectedFile.name}
-
-            </p>
-
-            <p>
-
-              <b>Size :</b>{" "}
-
-              {(selectedFile.size / 1024).toFixed(2)} KB
-
-            </p>
-
+          <div className="bg-[#0a0407] border border-red-600/30 rounded-xl mt-3 p-3.5 flex justify-between items-center text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-red-400">✔ File Selected:</span>
+              <span className="font-mono text-zinc-200">{selectedFile.name}</span>
+              <span className="text-red-400/60 font-mono">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+            </div>
+            <button
+              onClick={() => setSelectedFile(null)}
+              className="text-rose-400 text-xs font-cyber hover:underline cursor-pointer"
+            >
+              Remove
+            </button>
           </div>
-
         )}
-
       </div>
 
+      {/* Execute Scan Action Button */}
       <button
         onClick={handleScan}
         disabled={scanning || (!selectedFile && text.length > currentLimit)}
-        className={`w-full mt-8 font-bold font-cyber tracking-wider py-5 rounded-xl text-lg transition ${
+        className={`w-full mt-6 font-bold font-cyber tracking-wider py-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
           scanning || (!selectedFile && text.length > currentLimit)
-            ? "bg-zinc-800 cursor-not-allowed text-zinc-500"
-            : "bg-cyan-500 hover:bg-cyan-600 text-black hover:scale-[1.02] glow-cyan"
+            ? "bg-[#110709] cursor-not-allowed text-red-400/40 border border-red-600/10"
+            : "bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-lg shadow-red-600/25 hover:scale-[1.01]"
         }`}
       >
-        {scanning ? "⚙ SCANNING..." : "🚀 Scan with GuardianX AI"}
+        <FaRocket size={14} />
+        <span>{scanning ? "EXECUTION IN PROGRESS..." : "Execute GuardianX AI Neural Scan"}</span>
       </button>
-            {/* Result */}
 
-      {result && (
+      {/* Forensic Result Report Card */}
+      {result && (() => {
+        const userLevel = getCurrentUser()?.security_level || "Standard";
 
-        <div className="mt-10 bg-[#09090B] rounded-xl p-6">
+        let levelTheme = {
+          border: "border-sky-500/30 bg-[#111927]/95",
+          bannerBg: "bg-sky-500/10 border-sky-500/30 text-sky-400",
+          bannerText: "Standard Guard Active — Secure Sandbox Mode",
+          glow: "shadow-[0_0_20px_rgba(56,189,248,0.2)]",
+        };
 
-          <h2 className="text-3xl font-bold text-cyan-400">
+        if (userLevel === "Enhanced") {
+          levelTheme = {
+            border: "border-amber-500/30 bg-[#0e0c0a]/95",
+            bannerBg: "bg-amber-500/10 border-amber-500/30 text-amber-400 animate-pulse",
+            bannerText: "Enhanced Heuristic Analysis Shield Active",
+            glow: "shadow-[0_0_20px_rgba(245,158,11,0.2)]",
+          };
+        } else if (userLevel === "Lockdown") {
+          levelTheme = {
+            border: "border-rose-500/40 bg-[#120808]/95",
+            bannerBg: "bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse",
+            bannerText: "⚡ PROTOCOL LOCKDOWN ENFORCED — INTERCEPT ACTIVE",
+            glow: "shadow-[0_0_25px_rgba(244,63,94,0.3)]",
+          };
+        }
 
-            Scan Result
+        return (
+          <div className={`mt-8 rounded-2xl p-6 border transition-all duration-300 ${levelTheme.border} ${levelTheme.glow}`}>
+            <div className={`flex items-center gap-2 border px-4 py-2.5 rounded-xl mb-6 text-xs font-cyber font-bold tracking-wider ${levelTheme.bannerBg}`}>
+              <span>{levelTheme.bannerText}</span>
+            </div>
 
-          </h2>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-sky-500/15">
+              <h3 className="text-xl font-bold font-serif-header text-slate-100 flex items-center gap-2">
+                <span>Forensic Intelligence Matrix</span>
+                <span className="text-[10px] text-sky-400/60 font-mono">ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+              </h3>
 
-          {"status" in result && (
-
-            <>
-
-              <div className="mt-6">
-
-                <p className="text-xl">
-
-                  <b>Status :</b>{" "}
-
-                  <span
-                    className={
-                      result.status === "Phishing"
-                        ? "text-red-500"
-                        : "text-green-400"
-                    }
-                  >
+              {"status" in result && (
+                <div className="flex gap-2">
+                  {userLevel === "Lockdown" && (result.status === "Phishing" || result.status === "Suspicious") && (
+                    <span className="text-[9px] font-cyber px-2 py-1 rounded bg-rose-500 text-white font-bold animate-pulse">
+                      THREAT INTERCEPTED
+                    </span>
+                  )}
+                  <span className={`text-[10px] font-cyber font-bold uppercase tracking-wider px-3 py-1 rounded border ${
+                    result.status === "Phishing" ? "bg-rose-500/15 border-rose-500/40 text-rose-400" :
+                    result.status === "Suspicious" ? "bg-amber-500/15 border-amber-500/40 text-amber-400" :
+                    "bg-sky-500/15 border-sky-500/40 text-sky-400"
+                  }`}>
                     {result.status}
                   </span>
-
-                </p>
-
-                <p className="mt-3 text-lg">
-
-                  <b>Confidence :</b>{" "}
-
-                  {result.confidence}%
-
-                </p>
-
-              </div>
-
-              <div className="mt-6">
-
-                <h3 className="text-xl font-bold">
-
-                  Matched Words
-
-                </h3>
-
-                <div className="flex flex-wrap gap-3 mt-3">
-
-                  {result.matched_words &&
-                  result.matched_words.length > 0 ? (
-
-                    result.matched_words.map(
-                      (
-                        word: string,
-                        index: number
-                      ) => (
-
-                        <span
-                          key={index}
-                          className="bg-red-500 px-3 py-1 rounded-full"
-                        >
-
-                          {word}
-
-                        </span>
-
-                      )
-                    )
-
-                  ) : (
-
-                    <span className="text-green-400">
-
-                      No suspicious words found
-
-                    </span>
-
-                  )}
-
                 </div>
-
-              </div>
-
-              {/* AI Advisor */}
-
-              {result.advisor && (
-
-                <div className="mt-8 bg-[#161616] border border-cyan-500 rounded-xl p-6">
-
-                  <h2 className="text-2xl font-bold text-cyan-400">
-
-                    🛡 AI Security Advisor
-
-                  </h2>
-
-                  <div className="mt-5">
-
-                    <h3 className="text-xl font-bold">
-
-                      Risk Level :
-
-                      <span
-                        className={
-                          result.advisor.risk === "HIGH"
-                            ? " text-red-500"
-                            : " text-green-400"
-                        }
-                      >
-
-                        {" "}
-
-                        {result.advisor.risk}
-
-                      </span>
-
-                    </h3>
-
-                  </div>
-
-                  <div className="mt-6">
-
-                    <h3 className="text-yellow-400 text-xl font-bold">
-
-                      Why was this flagged?
-
-                    </h3>
-
-                    <ul className="list-disc ml-6 mt-3 space-y-2">
-
-                      {result.advisor.reason.map(
-                        (
-                          reason: string,
-                          index: number
-                        ) => (
-
-                          <li key={index}>
-
-                            {reason}
-
-                          </li>
-
-                        )
-                      )}
-
-                    </ul>
-
-                  </div>
-
-                  <div className="mt-6">
-
-                    <h3 className="text-green-400 text-xl font-bold">
-
-                      Recommended Actions
-
-                    </h3>
-
-                    <ul className="list-disc ml-6 mt-3 space-y-2">
-
-                      {result.advisor.recommendation.map(
-                        (
-                          item: string,
-                          index: number
-                        ) => (
-
-                          <li key={index}>
-
-                            {item}
-
-                          </li>
-
-                        )
-                      )}
-
-                    </ul>
-
-                  </div>
-
-                </div>
-
               )}
+            </div>
 
-            </>
+            {"status" in result && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#0a0407] border border-red-600/15 rounded-xl p-4">
+                    <p className="text-[10px] text-zinc-500 uppercase font-cyber">Verdict Severity</p>
+                    <p className={`text-xl font-bold font-cyber mt-1 uppercase ${
+                      result.status === "Phishing" ? "text-rose-400" :
+                      result.status === "Suspicious" ? "text-amber-400" : "text-emerald-400"
+                    }`}>
+                      {result.status === "Phishing" ? "Critical Risk" : result.status === "Suspicious" ? "Medium Risk" : "Clean / Verified Safe"}
+                    </p>
+                  </div>
 
-          )}
+                  <div className="bg-[#0a0407] border border-red-600/15 rounded-xl p-4">
+                    <p className="text-[10px] text-zinc-500 uppercase font-cyber">AI Model Confidence</p>
+                    <p className="text-xl font-bold font-cyber text-red-400 mt-1">{result.confidence}%</p>
+                  </div>
+                </div>
 
-          {"strength" in result && (
+                <div>
+                  <h4 className="text-xs uppercase font-cyber text-sky-300 mb-3 tracking-wider">Identified Risk Indicators</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {result.matched_words && result.matched_words.length > 0 ? (
+                      result.matched_words.map((word: string, index: number) => {
+                        const isRedacted = userLevel === "Lockdown" && result.status === "Phishing";
+                        return (
+                          <span
+                            key={index}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border ${
+                              isRedacted 
+                                ? "bg-rose-950/30 border-rose-500/40 text-rose-400 cursor-not-allowed select-none blur-[2px] hover:blur-none transition-all duration-200" 
+                                : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                            }`}
+                          >
+                            {isRedacted ? `[REDACTED: ${word.toUpperCase()}]` : word}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-xs text-sky-400 font-cyber flex items-center gap-1">
+                        <FaCheckCircle /> Zero malicious indicators isolated in analyzed payload.
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-            <>
+                {result.advisor && (
+                  <div className="mt-6 bg-[#0a0407] border border-red-600/20 rounded-xl p-5">
+                    <h4 className="text-sm font-bold font-cyber text-red-400 flex items-center gap-2 mb-3">
+                      <FaShieldAlt /> AI Security Advisor Recommended Countermeasures
+                    </h4>
 
-              <p className="mt-5 text-xl">
+                    <div className="space-y-4">
+                      {result.advisor.reason && (
+                        <div>
+                          <p className="text-[10px] text-zinc-500 uppercase font-cyber">Assessment Basis</p>
+                          <ul className="list-disc list-inside text-xs text-slate-300 space-y-1 mt-1.5">
+                            {result.advisor.reason.map((reason: string, index: number) => (
+                              <li key={index}>{reason}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                <b>Password Strength :</b>{" "}
+                      {result.advisor.recommendation && (
+                        <div>
+                          <p className="text-[10px] text-sky-400/60 uppercase font-cyber">Action Plan</p>
+                          <ul className="list-disc list-inside text-xs text-sky-400 space-y-1 mt-1.5">
+                            {result.advisor.recommendation.map((item: string, index: number) => (
+                              <li key={index}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                {result.strength}
+                  <div className="pt-4 border-t border-red-600/15">
+                  <button
+                    onClick={handleDownloadReport}
+                    className="flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold font-cyber text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-red-600/25 hover:scale-[1.02] transition-all cursor-pointer"
+                  >
+                    <FaFileDownload /> Export Forensic PDF Report
+                  </button>
+                </div>
+              </div>
+            )}
 
-              </p>
+            {"strength" in result && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#0a0407] border border-red-600/15 rounded-xl p-4">
+                    <p className="text-[10px] text-zinc-500 uppercase font-cyber">Entropy Rating</p>
+                    <p className={`text-xl font-bold font-cyber mt-1 uppercase ${
+                      result.strength === "STRONG" ? "text-emerald-400" :
+                      result.strength === "MEDIUM" ? "text-amber-400" : "text-rose-500"
+                    }`}>
+                      {result.strength}
+                    </p>
+                  </div>
 
-              <p className="mt-2 text-lg">
-
-                <b>Score :</b>{" "}
-
-                {result.score}/100
-
-              </p>
-
-            </>
-
-          )}
-
-          {/* Download PDF */}
-
-          {"status" in result && (
-  <div className="mt-8">
-    <button
-      onClick={handleDownloadReport}
-      className="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-3 rounded-xl"
-    >
-      📄 Download Security Report
-    </button>
-  </div>
-)}
-        </div>
-
-      )}
+                  <div className="bg-[#0a0407] border border-red-600/15 rounded-xl p-4">
+                    <p className="text-[10px] text-zinc-500 uppercase font-cyber">Password Security Score</p>
+                    <p className="text-xl font-bold font-cyber text-red-400 mt-1">{result.score}/100</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
     </div>
 
   );
-
 }
 
 export default QuickScanner;

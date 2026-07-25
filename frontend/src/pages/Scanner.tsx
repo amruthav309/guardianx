@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import QuickScanner from "../components/QuickScanner";
 import { getCurrentUser } from "../services/auth";
-import { FaShieldAlt, FaRobot, FaBolt } from "react-icons/fa";
+import { FaShieldAlt, FaRobot, FaBolt, FaHome, FaHistory } from "react-icons/fa";
 
 function Scanner() {
+  const navigate = useNavigate();
   const user = getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
 
@@ -19,68 +20,93 @@ function Scanner() {
   }, [sidebarOpen]);
 
   return (
-    <div className="flex min-h-screen bg-[#070709] text-white page-enter">
-      {sidebarOpen && <Sidebar />}
-      <div className="flex-1 p-5 overflow-y-auto">
+    <div className="flex min-h-screen bg-[#080e18] text-white page-enter">
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed lg:static top-0 left-0 h-screen z-50 flex-shrink-0">
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
+      <div className="flex-1 p-3 sm:p-6 overflow-y-auto min-w-0">
         <Topbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        {/* Header */}
-        <div className="mt-8 flex flex-col lg:flex-row justify-between items-start gap-4">
+        {/* Top Header with Dashboard Jump Button */}
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-5 shadow-xl">
           <div>
-            <h1 className="text-2xl font-bold font-cyber text-cyan-400 glow-text-cyan">
-              AI Security Scanner
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-cyber uppercase tracking-widest text-sky-400 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20">
+                Core Protection Engine
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold font-serif-header text-slate-100">
+              AI Security Threat Scanner
             </h1>
-            <p className="text-zinc-500 text-xs mt-1">
+            <p className="text-sky-400/60 text-xs mt-1">
               Powered by GuardianX Neural Engine — scanning for{" "}
-              <span className="text-cyan-400 font-mono">{user.email}</span>
+              <span className="text-cyan-300 font-mono">{user.email}</span>
             </p>
           </div>
 
-          {/* Status Chips */}
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 bg-[#0e0e11] border border-cyan-500/20 rounded-lg px-3 py-2">
-              <FaRobot className="text-cyan-400 text-xs" />
-              <div>
-                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Engine</p>
-                <p className="text-[10px] text-cyan-400 font-cyber font-bold">GuardianX AI</p>
-              </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#111927] border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-xs font-cyber font-semibold transition-all cursor-pointer shadow-md"
+            >
+              <FaHome size={13} />
+              <span>Dashboard</span>
+            </button>
+            <button
+              onClick={() => navigate("/history")}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#111927] border border-sky-500/30 text-sky-300 hover:bg-sky-500/20 text-xs font-cyber font-semibold transition-all cursor-pointer shadow-md"
+            >
+              <FaHistory size={12} />
+              <span>Scan Logs</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Status Chips Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+          <div className="flex items-center gap-3 bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-3.5 shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <FaRobot size={15} />
             </div>
-            <div className="flex items-center gap-2 bg-[#0e0e11] border border-emerald-500/20 rounded-lg px-3 py-2">
-              <FaBolt className="text-emerald-400 text-xs" />
-              <div>
-                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Status</p>
-                <p className="text-[10px] text-emerald-400 font-cyber font-bold">● READY</p>
-              </div>
+            <div>
+              <p className="text-[9px] text-sky-400/60 font-cyber uppercase tracking-wider">Detection Model</p>
+              <p className="text-xs text-sky-400 font-cyber font-bold">GuardianX AI v4.2</p>
             </div>
-            <div className="hidden md:flex items-center gap-2 bg-[#0e0e11] border border-violet-500/20 rounded-lg px-3 py-2">
-              <FaShieldAlt className="text-violet-400 text-xs" />
-              <div>
-                <p className="text-[9px] text-zinc-600 font-cyber uppercase">Threat DB</p>
-                <p className="text-[10px] text-violet-400 font-cyber font-bold">ONLINE</p>
-              </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-3.5 shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <FaBolt size={15} />
+            </div>
+            <div>
+              <p className="text-[9px] text-sky-400/60 font-cyber uppercase tracking-wider">Engine Status</p>
+              <p className="text-xs text-sky-400 font-cyber font-bold flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" /> ● READY FOR SCAN
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-3.5 shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-300">
+              <FaShieldAlt size={15} />
+            </div>
+            <div>
+              <p className="text-[9px] text-sky-400/60 font-cyber uppercase tracking-wider">Active Clearance</p>
+              <p className="text-xs text-slate-200 font-cyber font-bold uppercase">{user.security_level || "Standard"}</p>
             </div>
           </div>
         </div>
 
-        {/* Scanner Grid — scan types info */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6">
-          {[
-            { label: "Email", icon: "✉", desc: "Phishing analysis" },
-            { label: "URL", icon: "🌐", desc: "Link safety check" },
-            { label: "SMS", icon: "💬", desc: "Text threat scan" },
-            { label: "Password", icon: "🔑", desc: "Strength analysis" },
-            { label: "File", icon: "📄", desc: "Malware scan" },
-          ].map((t) => (
-            <div key={t.label} className="bg-[#0e0e11] border border-zinc-800 hover:border-cyan-500/30 rounded-xl p-3 text-center transition-all hover-card-trigger cursor-default">
-              <div className="text-2xl mb-1">{t.icon}</div>
-              <p className="text-[11px] font-bold font-cyber text-zinc-200">{t.label}</p>
-              <p className="text-[9px] text-zinc-600">{t.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Main Scanner */}
-        <div className="mt-6 glass-panel-cyan rounded-xl border border-cyan-500/20">
+        {/* Quick Scanner Core */}
+        <div className="mt-8">
           <QuickScanner />
         </div>
       </div>

@@ -27,4 +27,7 @@ export const addNotification = (
   // Trigger custom toast notification
   showToast(title, message, type);
 
+  // Dispatch custom window event to trigger instant Topbar sync
+  window.dispatchEvent(new Event("guardianx_notification_added"));
+
 };

@@ -7,9 +7,8 @@ from sqlalchemy import (
     ForeignKey,
 )
 
-from datetime import datetime
-
 from app.database.database import Base
+from app.utils.timezone import get_ist_now
 
 
 class History(Base):
@@ -46,5 +45,5 @@ class History(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=get_ist_now,
     )

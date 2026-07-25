@@ -1,27 +1,29 @@
 export const COLORS = {
-  background: "#09090B",
+  background: "#080e18", // Dark Midnight Ocean
 
-  surface: "#18181B",
+  surface: "#111927", // Midnight Slate Glass Card
 
-  border: "#2A2A2E",
+  border: "#1e293b", // Dark Slate Blue Border
 
-  primary: "#00D9FF",
+  primary: "#38bdf8", // Sky Cyan Accent
 
-  secondary: "#00FFA3",
+  primaryCyan: "#0ea5e9", // Electric Ocean Cyan
 
-  danger: "#FF4D6D",
+  secondary: "#2563eb", // Sapphire Blue
 
-  warning: "#FFC857",
+  danger: "#f43f5e", // Rose Red
 
-  success: "#00E676",
+  warning: "#f59e0b", // Amber Yellow
 
-  text: "#FFFFFF",
+  success: "#10b981", // Emerald Safe
 
-  textSecondary: "#A1A1AA",
+  text: "#f8fafc",
+
+  textSecondary: "#94a3b8",
 };
 
 export const SHADOWS = {
-  glow: "0 0 25px rgba(0,217,255,0.35)",
+  glow: "0 0 25px rgba(56, 189, 248, 0.35)",
 };
 
 export const RADIUS = {
