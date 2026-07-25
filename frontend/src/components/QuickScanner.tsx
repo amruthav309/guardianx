@@ -13,7 +13,12 @@ import {
 } from "../services/auth";
 import { FaShieldAlt, FaEnvelope, FaGlobe, FaSms, FaKey, FaFolderOpen, FaRocket, FaFileDownload, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 
-function QuickScanner() {
+interface QuickScannerProps {
+  theme?: "cyan" | "red";
+}
+
+function QuickScanner({ theme = "cyan" }: QuickScannerProps) {
+  const isRed = theme === "red";
 
   const [scanType, setScanType] = useState("email");
   const [text, setText] = useState("");
@@ -21,6 +26,7 @@ function QuickScanner() {
   const [result, setResult] = useState<any>(null);
   const [scanError, setScanError] = useState("");
   const [scanning, setScanning] = useState(false);
+
 
   // Unique max limits per scan type
   const MAX_LIMITS: Record<string, number> = {
@@ -223,22 +229,22 @@ function QuickScanner() {
   };
 
   return (
+    <div className={isRed ? "bg-[#0f0609]/95 rounded-2xl p-6 sm:p-8 border border-red-600/25 shadow-2xl relative overflow-hidden" : "bg-[#111927]/90 rounded-2xl p-6 sm:p-8 border border-sky-500/20 shadow-2xl relative overflow-hidden"}>
 
-    <div className="bg-[#0f0609]/95 rounded-2xl p-6 sm:p-8 border border-red-600/25 shadow-2xl relative overflow-hidden">
       {/* Laser line overlay when scanning */}
       {scanning && <div className="scanner-line" />}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-red-600/15 pb-5">
+      <div className={isRed ? "flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-red-600/15 pb-5" : "flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-500/15 pb-5"}>
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-serif-header text-red-400 flex items-center gap-2">
+          <h2 className={isRed ? "text-2xl sm:text-3xl font-bold font-serif-header text-red-400 flex items-center gap-2" : "text-2xl sm:text-3xl font-bold font-serif-header text-slate-100 flex items-center gap-2"}>
             <span>AI Neural Security Control Panel</span>
           </h2>
-          <p className="text-zinc-500 text-xs mt-1">
+          <p className={isRed ? "text-zinc-500 text-xs mt-1" : "text-sky-400/60 text-xs mt-1"}>
             Select a target vector or upload a document for real-time heuristic threat detection.
           </p>
         </div>
 
-        <span className="text-xs font-cyber px-3 py-1 rounded-full bg-red-600/15 border border-red-600/30 text-red-400 w-fit">
+        <span className={isRed ? "text-xs font-cyber px-3 py-1 rounded-full bg-red-600/15 border border-red-600/30 text-red-400 w-fit" : "text-xs font-cyber px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 w-fit"}>
           Live AI Engine Active
         </span>
       </div>
@@ -264,17 +270,21 @@ function QuickScanner() {
             }}
             className={`rounded-2xl p-4 border text-left transition-all duration-300 cursor-pointer ${
               scanType === item.key
-                ? "border-red-500 bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-600/25 font-bold"
-                : "border-red-600/15 bg-[#0a0407] text-zinc-300 hover:bg-red-950/30 hover:border-red-600/30"
+                ? isRed
+                  ? "border-red-500 bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-600/25 font-bold"
+                  : "border-sky-400 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 font-bold"
+                : isRed
+                  ? "border-red-600/15 bg-[#0a0407] text-zinc-300 hover:bg-red-950/30 hover:border-red-600/30"
+                  : "border-sky-500/20 bg-[#080e18] text-slate-300 hover:bg-sky-500/10 hover:border-sky-500/40"
             }`}
           >
-            <div className={`text-xl mb-2 ${scanType === item.key ? "text-white" : "text-red-400"}`}>
+            <div className={`text-xl mb-2 ${scanType === item.key ? "text-white" : isRed ? "text-red-400" : "text-sky-400"}`}>
               {item.icon}
             </div>
             <h3 className={`text-sm font-bold font-cyber ${scanType === item.key ? "text-white" : "text-zinc-100"}`}>
               {item.title}
             </h3>
-            <p className={`text-[10px] font-sans mt-0.5 ${scanType === item.key ? "text-red-100" : "text-zinc-500"}`}>
+            <p className={`text-[10px] font-sans mt-0.5 ${scanType === item.key ? (isRed ? "text-red-100" : "text-sky-100") : isRed ? "text-zinc-500" : "text-sky-400/60"}`}>
               {item.desc}
             </p>
           </button>
@@ -293,14 +303,16 @@ function QuickScanner() {
           className={`w-full h-44 bg-[#080e18] border rounded-2xl p-4 text-sm font-mono text-slate-100 outline-none transition-all ${
             !selectedFile && text.length > currentLimit
               ? "border-rose-500/50 focus:border-rose-500"
-              : "border-red-600/20 focus:border-red-500"
+              : isRed
+                ? "border-red-600/20 focus:border-red-500"
+                : "border-sky-500/20 focus:border-cyan-400"
           }`}
         />
 
         {/* Character counter */}
         {!selectedFile && (
           <div className="flex justify-between mt-2 font-cyber text-xs">
-            <p className={text.length > currentLimit * 0.9 ? "text-amber-400" : "text-red-400/60"}>
+            <p className={text.length > currentLimit * 0.9 ? "text-amber-400" : isRed ? "text-red-400/60" : "text-sky-400/60"}>
               {text.length}/{currentLimit} characters
             </p>
             {text.length > currentLimit && (
@@ -322,17 +334,17 @@ function QuickScanner() {
       {/* File Upload Drop Zone */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-cyber font-bold text-red-400 flex items-center gap-1.5">
+          <label className={isRed ? "text-sm font-cyber font-bold text-red-400 flex items-center gap-1.5" : "text-sm font-cyber font-bold text-sky-400 flex items-center gap-1.5"}>
             <FaFolderOpen /> <span>Upload Document File for Inspection</span>
           </label>
-          <span className="text-[10px] text-zinc-500 font-mono">Supports TXT, PDF, DOCX, EML, PNG, JPG</span>
+          <span className="text-[10px] text-zinc-400 font-mono">Supports TXT, PDF, DOCX, EML, PNG, JPG</span>
         </div>
 
         <label
           htmlFor="fileUpload"
-          className="flex flex-col justify-center items-center py-6 border-2 border-dashed border-red-600/30 hover:border-red-500/60 bg-[#0a0407]/70 rounded-2xl cursor-pointer hover:bg-red-950/20 transition-all"
+          className={isRed ? "flex flex-col justify-center items-center py-6 border-2 border-dashed border-red-600/30 hover:border-red-500/60 bg-[#0a0407]/70 rounded-2xl cursor-pointer hover:bg-red-950/20 transition-all" : "flex flex-col justify-center items-center py-6 border-2 border-dashed border-sky-500/30 hover:border-sky-400/60 bg-[#080e18]/70 rounded-2xl cursor-pointer hover:bg-sky-500/10 transition-all"}
         >
-          <div className="text-3xl text-red-400 mb-2">
+          <div className={isRed ? "text-3xl text-red-400 mb-2" : "text-3xl text-sky-400 mb-2"}>
             📂
           </div>
           <p className="text-xs font-cyber text-slate-200">
@@ -353,11 +365,11 @@ function QuickScanner() {
         />
 
         {selectedFile && (
-          <div className="bg-[#0a0407] border border-red-600/30 rounded-xl mt-3 p-3.5 flex justify-between items-center text-xs">
+          <div className={isRed ? "bg-[#0a0407] border border-red-600/30 rounded-xl mt-3 p-3.5 flex justify-between items-center text-xs" : "bg-[#080e18] border border-sky-500/30 rounded-xl mt-3 p-3.5 flex justify-between items-center text-xs"}>
             <div className="flex items-center gap-2">
-              <span className="text-red-400">✔ File Selected:</span>
+              <span className={isRed ? "text-red-400" : "text-sky-400"}>✔ File Selected:</span>
               <span className="font-mono text-zinc-200">{selectedFile.name}</span>
-              <span className="text-red-400/60 font-mono">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+              <span className="text-zinc-400 font-mono">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
             </div>
             <button
               onClick={() => setSelectedFile(null)}
@@ -375,13 +387,18 @@ function QuickScanner() {
         disabled={scanning || (!selectedFile && text.length > currentLimit)}
         className={`w-full mt-6 font-bold font-cyber tracking-wider py-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
           scanning || (!selectedFile && text.length > currentLimit)
-            ? "bg-[#110709] cursor-not-allowed text-red-400/40 border border-red-600/10"
-            : "bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-lg shadow-red-600/25 hover:scale-[1.01]"
+            ? isRed
+              ? "bg-[#110709] cursor-not-allowed text-red-400/40 border border-red-600/10"
+              : "bg-[#0a121e] cursor-not-allowed text-sky-400/40 border border-sky-500/10"
+            : isRed
+              ? "bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-lg shadow-red-600/25 hover:scale-[1.01]"
+              : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-lg shadow-sky-500/25 hover:scale-[1.01]"
         }`}
       >
         <FaRocket size={14} />
         <span>{scanning ? "EXECUTION IN PROGRESS..." : "Execute GuardianX AI Neural Scan"}</span>
       </button>
+
 
       {/* Forensic Result Report Card */}
       {result && (() => {

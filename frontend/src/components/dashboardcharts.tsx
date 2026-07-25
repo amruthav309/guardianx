@@ -10,11 +10,14 @@ interface Analytics {
 
 interface Props {
   analytics: Analytics;
+  theme?: "cyan" | "red";
 }
 
-export default function DashboardCharts({ analytics }: Props) {
+export default function DashboardCharts({ analytics, theme = "cyan" }: Props) {
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [activeBar, setActiveBar] = useState<number | null>(null);
+
+  const isRed = theme === "red";
 
   const emails = analytics?.emails || 0;
   const urls = analytics?.urls || 0;
@@ -26,21 +29,22 @@ export default function DashboardCharts({ analytics }: Props) {
   const safeRate = totalScans > 0 ? ((safeScans / totalScans) * 100).toFixed(1) : "100.0";
   const threatRate = totalScans > 0 ? ((threats / totalScans) * 100).toFixed(1) : "0.0";
 
-  // 1. Pie / Donut Chart Slices (Verified Safe vs Threats Neutralized)
+  // 1. Pie / Donut Chart Slices
   const pieData = [
     {
       name: "Verified Safe",
       count: safeScans,
       percentage: safeRate,
-      color: "#38bdf8", // Sky Blue
+      color: isRed ? "#38bdf8" : "#00f0ff", // Sky Blue / Cyan
     },
     {
       name: "Threats Neutralized",
       count: threats,
       percentage: threatRate,
-      color: "#f43f5e", // Rose Red
+      color: isRed ? "#f43f5e" : "#f43f5e", // Rose Red
     },
   ];
+
 
   // Helper for rendering SVG Pie/Donut Arcs
   const getArcPath = (cx: number, cy: number, rOuter: number, rInner: number, startAngle: number, endAngle: number) => {
@@ -77,18 +81,19 @@ export default function DashboardCharts({ analytics }: Props) {
   return (
     <div className="grid lg:grid-cols-2 gap-6">
 
+
       {/* GRAPH 1: Threat Verdict Distribution (SVG Pie / Donut Chart) */}
-      <div className="bg-[#0f0609]/95 border border-red-600/25 rounded-2xl p-5 shadow-2xl transition-all hover:border-red-600/40">
+      <div className={isRed ? "bg-[#0f0609]/95 border border-red-600/25 rounded-2xl p-5 shadow-2xl transition-all hover:border-red-600/40" : "bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-5 shadow-xl transition-all hover:border-sky-500/40"}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-red-400 text-lg font-bold font-serif-header flex items-center gap-2">
+            <h2 className={isRed ? "text-red-400 text-lg font-bold font-serif-header flex items-center gap-2" : "text-sky-400 text-lg font-bold font-serif-header flex items-center gap-2"}>
               Threat Verdict Distribution
             </h2>
-            <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
+            <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
               Proportional breakdown of clean scans vs isolated threats
             </p>
           </div>
-          <span className="text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-red-600/15 text-red-400 border border-red-600/30 font-bold uppercase tracking-widest">
+          <span className={isRed ? "text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-red-600/15 text-red-400 border border-red-600/30 font-bold uppercase tracking-widest" : "text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold uppercase tracking-widest"}>
             PIE TELEMETRY
           </span>
         </div>
@@ -111,7 +116,7 @@ export default function DashboardCharts({ analytics }: Props) {
                     cy={cy}
                     r={rOuter}
                     fill="none"
-                    stroke="#38bdf8"
+                    stroke={isRed ? "#f87171" : "#38bdf8"}
                     strokeWidth="20"
                     opacity="0.3"
                   />
@@ -146,7 +151,7 @@ export default function DashboardCharts({ analytics }: Props) {
             })()}
 
             {/* Center Text inside Donut */}
-            <text x="140" y="112" textAnchor="middle" fill="#f87171" fontSize="24" fontWeight="bold" fontFamily="JetBrains Mono">
+            <text x="140" y="112" textAnchor="middle" fill={isRed ? "#f87171" : "#00f0ff"} fontSize="24" fontWeight="bold" fontFamily="JetBrains Mono">
               {totalScans}
             </text>
             <text x="140" y="130" textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold" fontFamily="JetBrains Mono">
@@ -169,7 +174,7 @@ export default function DashboardCharts({ analytics }: Props) {
                     width="190"
                     height="52"
                     rx="10"
-                    fill="#0a0407"
+                    fill={isRed ? "#0a0407" : "#080e18"}
                     stroke={item.color}
                     strokeWidth={activePieIndex === idx ? "2" : "1"}
                     strokeOpacity={activePieIndex === idx ? "0.8" : "0.3"}
@@ -189,20 +194,20 @@ export default function DashboardCharts({ analytics }: Props) {
           {/* Active Hover Tooltip for Pie Slice */}
           {activePieIndex !== null && (
             <div
-              className="absolute z-20 bg-[#0a0407] border border-red-600/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all"
+              className={isRed ? "absolute z-20 bg-[#0a0407] border border-red-600/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all" : "absolute z-20 bg-[#080e18] border border-sky-500/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all"}
               style={{
                 left: "28%",
                 top: "15%",
                 transform: "translate(-50%, -50%)",
               }}
             >
-              <p className="font-bold text-red-400 border-b border-red-600/20 pb-1 mb-1">
+              <p className={isRed ? "font-bold text-red-400 border-b border-red-600/20 pb-1 mb-1" : "font-bold text-sky-400 border-b border-sky-500/20 pb-1 mb-1"}>
                 {pieData[activePieIndex].name}
               </p>
               <p className="text-zinc-200">
                 Count: <span className="font-bold" style={{ color: pieData[activePieIndex].color }}>{pieData[activePieIndex].count}</span>
               </p>
-              <p className="text-red-400/80">
+              <p className={isRed ? "text-red-400/80" : "text-sky-400/80"}>
                 Share: <span className="font-bold">{pieData[activePieIndex].percentage}%</span>
               </p>
             </div>
@@ -211,20 +216,21 @@ export default function DashboardCharts({ analytics }: Props) {
       </div>
 
       {/* GRAPH 2: Scan Vector Distribution (SVG Bar Chart) */}
-      <div className="bg-[#0f0609]/95 border border-red-600/25 rounded-2xl p-5 shadow-2xl transition-all hover:border-red-600/40">
+      <div className={isRed ? "bg-[#0f0609]/95 border border-red-600/25 rounded-2xl p-5 shadow-2xl transition-all hover:border-red-600/40" : "bg-[#111927]/90 border border-sky-500/20 rounded-2xl p-5 shadow-xl transition-all hover:border-sky-500/40"}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-red-400 text-lg font-bold font-serif-header flex items-center gap-2">
+            <h2 className={isRed ? "text-red-400 text-lg font-bold font-serif-header flex items-center gap-2" : "text-sky-400 text-lg font-bold font-serif-header flex items-center gap-2"}>
               Scan Vector Distribution
             </h2>
-            <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
+            <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
               Live count tally per security scan channel
             </p>
           </div>
-          <span className="text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-red-600/15 text-red-400 border border-red-600/30 font-bold uppercase tracking-widest">
+          <span className={isRed ? "text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-red-600/15 text-red-400 border border-red-600/30 font-bold uppercase tracking-widest" : "text-[9px] font-cyber px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold uppercase tracking-widest"}>
             BY VECTOR
           </span>
         </div>
+
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 mb-2 text-xs font-mono">
@@ -254,8 +260,8 @@ export default function DashboardCharts({ analytics }: Props) {
               const val = Math.round(ratio * maxBarVal);
               return (
                 <g key={i}>
-                  <line x1="40" y1={y} x2="470" y2={y} stroke="rgba(220, 38, 38, 0.12)" strokeDasharray="4 4" />
-                  <text x="32" y={y + 4} textAnchor="end" fill="#9f7070" fontSize="10" fontFamily="JetBrains Mono">
+                  <line x1="40" y1={y} x2="470" y2={y} stroke={isRed ? "rgba(220, 38, 38, 0.12)" : "rgba(56, 189, 248, 0.12)"} strokeDasharray="4 4" />
+                  <text x="32" y={y + 4} textAnchor="end" fill={isRed ? "#9f7070" : "#64748b"} fontSize="10" fontFamily="JetBrains Mono">
                     {val}
                   </text>
                 </g>
@@ -308,7 +314,7 @@ export default function DashboardCharts({ analytics }: Props) {
                     x={x + barWidth / 2}
                     y="222"
                     textAnchor="middle"
-                    fill="#9f7070"
+                    fill={isRed ? "#9f7070" : "#94a3b8"}
                     fontSize="10"
                     fontFamily="JetBrains Mono"
                     fontWeight="bold"
@@ -323,14 +329,14 @@ export default function DashboardCharts({ analytics }: Props) {
           {/* Active Hover Tooltip for Bar */}
           {activeBar !== null && (
             <div
-              className="absolute z-20 bg-[#0a0407] border border-red-600/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all"
+              className={isRed ? "absolute z-20 bg-[#0a0407] border border-red-600/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all" : "absolute z-20 bg-[#080e18] border border-sky-500/60 p-2.5 rounded-xl text-xs font-mono shadow-2xl pointer-events-none transition-all"}
               style={{
                 left: `${((60 + activeBar * 105 + 30) / 500) * 100}%`,
                 top: "20%",
                 transform: "translate(-50%, -50%)",
               }}
             >
-              <p className="font-bold text-red-400 border-b border-red-600/20 pb-1 mb-1">
+              <p className={isRed ? "font-bold text-red-400 border-b border-red-600/20 pb-1 mb-1" : "font-bold text-sky-400 border-b border-sky-500/20 pb-1 mb-1"}>
                 {scanData[activeBar].name}
               </p>
               <p className="text-zinc-200 font-bold">
@@ -343,4 +349,4 @@ export default function DashboardCharts({ analytics }: Props) {
 
     </div>
   );
-}
+}

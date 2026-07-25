@@ -137,7 +137,7 @@ function AdminAnalytics() {
             <span className="ml-auto text-[10px] bg-red-600/15 text-red-300 px-2 py-0.5 rounded border border-red-600/25 font-cyber">SYSTEM OVERVIEW</span>
           </div>
           <div className="p-4">
-            <DashboardCharts analytics={analytics} />
+            <DashboardCharts analytics={analytics} theme="red" />
           </div>
         </div>
 

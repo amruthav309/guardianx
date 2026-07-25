@@ -79,7 +79,7 @@ function AdminScanner() {
             <span className="ml-auto text-[10px] bg-red-600/20 text-red-300 px-2 py-0.5 rounded border border-red-600/30 font-cyber">LOCKDOWN MODE</span>
           </div>
           <div className="p-4">
-            <QuickScanner />
+            <QuickScanner theme="red" />
           </div>
         </div>
 
