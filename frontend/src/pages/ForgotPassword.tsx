@@ -36,18 +36,20 @@ function ForgotPassword() {
     }
     try {
       setLoading(true);
-      await sendForgotPasswordOTP(email);
+      await sendForgotPasswordOTP(email.trim().toLowerCase());
       setSuccess("OTP sent successfully to your email.");
       setTimeout(() => {
         setSuccess("");
         setStep(2);
       }, 1500);
-    } catch {
-      setError("Unable to send OTP. Please check your email.");
+    } catch (err: any) {
+      const serverMsg = err.response?.data?.detail || err.response?.data?.message || err.message;
+      setError(serverMsg || "Unable to send OTP. Please check your email.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleVerifyOTP = async () => {
     setError("");

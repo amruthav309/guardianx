@@ -43,11 +43,12 @@ def create_user(
     user: UserCreate
 ):
     validate_password_strength(user.password)
-
+    clean_email = user.email.strip().lower()
+    clean_username = user.username.strip()
 
     existing_email = (
         db.query(User)
-        .filter(User.email == user.email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -58,7 +59,7 @@ def create_user(
 
     existing_username = (
         db.query(User)
-        .filter(User.username == user.username)
+        .filter(func.lower(User.username) == clean_username.lower())
         .first()
     )
 
@@ -70,9 +71,9 @@ def create_user(
     otp = generate_otp()
 
     new_user = User(
-        name=user.name,
-        username=user.username,
-        email=user.email,
+        name=user.name.strip(),
+        username=clean_username,
+        email=clean_email,
         password=hash_password(
             user.password
         ),
@@ -103,10 +104,11 @@ def login_user(
     email: str,
     password: str
 ):
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -145,10 +147,11 @@ def verify_email(
     email: str,
     otp: str
 ):
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -179,10 +182,11 @@ def resend_otp(
     db: Session,
     email: str
 ):
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -238,10 +242,11 @@ def change_password(
     current_password: str = None,
 ):
     validate_password_strength(new_password)
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -269,10 +274,11 @@ def send_forgot_password_otp(
     db: Session,
     email: str,
 ):
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
@@ -301,10 +307,11 @@ def verify_forgot_password_otp(
     email: str,
     otp: str,
 ):
+    clean_email = email.strip().lower()
 
     user = (
         db.query(User)
-        .filter(User.email == email)
+        .filter(func.lower(User.email) == clean_email)
         .first()
     )
 
