@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User
