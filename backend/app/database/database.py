@@ -5,22 +5,29 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
 
-# Support direct DATABASE_URL (for production/Render) or build from parts
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Support direct DATABASE_URL (for production/Render PostgreSQL) or build from parts
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+# Render uses "postgres://" but SQLAlchemy needs "postgresql://"
+if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 if not DATABASE_URL:
-    # Build MySQL URL from individual parts (for local dev)
-    DATABASE_URL = (
-        f"mysql+pymysql://"
-        f"{os.getenv('DB_USER')}:"
-        f"{os.getenv('DB_PASSWORD')}@"
-        f"{os.getenv('DB_HOST')}:"
-        f"{os.getenv('DB_PORT')}/"
-        f"{os.getenv('DB_NAME')}"
-    )
+    # Try to build MySQL URL from individual env vars (local dev)
+    db_user = os.getenv("DB_USER", "")
+    db_password = os.getenv("DB_PASSWORD", "")
+    db_host = os.getenv("DB_HOST", "")
+    db_port = os.getenv("DB_PORT", "")
+    db_name = os.getenv("DB_NAME", "")
+
+    if all([db_user, db_password, db_host, db_port, db_name]):
+        DATABASE_URL = (
+            f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        )
+    else:
+        # Fallback to SQLite (for Render free tier when DB not yet linked)
+        DATABASE_URL = "sqlite:///./guardianx.db"
+        print("[WARNING] No DATABASE_URL or MySQL env vars found — using SQLite fallback.")
 
 # For SQLite, need to adjust connect_args
 is_sqlite = DATABASE_URL.startswith("sqlite")
