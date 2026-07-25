@@ -184,11 +184,9 @@ function Login() {
       clearInterval(stepInterval);
       setIsScanning(false);
       console.error(error);
-      if (error.response?.data?.detail) {
-        setLoginError(error.response.data.detail);
-      } else {
-        setLoginError("Login Failed. Please check your credentials.");
-      }
+      const errDetail = error.response?.data?.detail || error.response?.data?.message || error.message;
+      setLoginError(errDetail || "Login Failed. Please check your credentials.");
+
     }
   };
 

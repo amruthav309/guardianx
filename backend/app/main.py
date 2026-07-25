@@ -60,7 +60,7 @@ app = FastAPI(
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# CORS — allow local dev and production frontend URL
+# CORS — allow local dev, production frontend, and all Vercel preview deployments
 FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
 
 allow_origins = [
@@ -72,13 +72,13 @@ allow_origins = [
 
 if FRONTEND_URL:
     allow_origins.append(FRONTEND_URL)
-    # Also allow www subdomain variant
     if FRONTEND_URL.startswith("https://"):
         allow_origins.append(FRONTEND_URL.replace("https://", "https://www."))
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

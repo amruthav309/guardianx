@@ -50,11 +50,8 @@ function Register() {
         navigate("/verify-email", { state: { email: form.email } });
       }, 2000);
     } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError("Registration Failed");
-      }
+      const serverError = err.response?.data?.detail || err.response?.data?.message || err.message;
+      setError(serverError || "Registration Failed. Please check network connection.");
     } finally {
       setLoading(false);
     }
