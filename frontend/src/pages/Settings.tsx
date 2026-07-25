@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-import { getCurrentUser, updateSecurityLevel, default as API } from "../services/auth";
+import { getCurrentUser, updateSecurityLevel, clearHistory, default as API } from "../services/auth";
 import {
   FaBell, FaShieldAlt, FaSave, FaTrash, FaUserMinus,
   FaDatabase, FaLock, FaExclamationTriangle, FaHome
 } from "react-icons/fa";
+
 import { FiToggleLeft, FiToggleRight } from "react-icons/fi";
 
 function Settings() {
@@ -263,12 +264,13 @@ function Settings() {
               onClick={async () => {
                 if (!window.confirm("Clear all your scan history?")) return;
                 try {
-                  await fetch(`http://127.0.0.1:8000/history/clear?user_id=${user.id}`, { method: "DELETE" });
+                  await clearHistory();
                   alert("History cleared successfully.");
                 } catch { alert("Error clearing history."); }
               }}
               className="w-full flex items-center justify-center gap-2 bg-[#080e18] hover:bg-sky-500/15 border border-sky-500/20 text-slate-300 py-2.5 rounded-xl text-xs font-cyber transition-all cursor-pointer"
             >
+
               <FaTrash size={10} />
               Clear Scan Records
             </button>
