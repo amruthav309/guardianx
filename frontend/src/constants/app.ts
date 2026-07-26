@@ -7,9 +7,12 @@ export const getApiBaseUrl = (): string => {
   let url = import.meta.env.VITE_API_URL;
 
   if (typeof window !== "undefined") {
-    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
     if (!isLocal && (!url || url.includes("localhost") || url.includes("127.0.0.1"))) {
       url = window.location.origin;
+    } else if (isLocal && (!url || url.includes("localhost") || url.includes("127.0.0.1"))) {
+      url = `http://${host}:8000`;
     }
   }
 
