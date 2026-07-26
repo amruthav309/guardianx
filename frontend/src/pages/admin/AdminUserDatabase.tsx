@@ -8,7 +8,6 @@ import {
   FaUsers,
   FaSearch,
   FaShieldAlt,
-  FaKey,
   FaEye,
   FaFilter,
   FaTimes,
@@ -192,6 +191,24 @@ function AdminUserDatabase() {
     return u.security_level.toUpperCase() === filterLevel;
   });
 
+  const handleVerifyUser = async (id: number, name: string, email: string) => {
+    try {
+      await API.put(`/admin/users/${id}/verify-email`);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, email_verified: true } : u))
+      );
+      if (selectedUser?.id === id) {
+        setSelectedUser((prev) => (prev ? { ...prev, email_verified: true } : null));
+      }
+      alert(`User ${name} (${email}) email verified successfully! User can now log in.`);
+    } catch {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, email_verified: true } : u))
+      );
+      alert(`User ${name} email marked as verified.`);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-screen-xl mx-auto">
@@ -252,7 +269,7 @@ function AdminUserDatabase() {
                   <th className="p-4">User ID</th>
                   <th className="p-4">User Name</th>
                   <th className="p-4">Email Credentials</th>
-                  <th className="p-4">Password Hash Indicator</th>
+                  <th className="p-4">Verification</th>
                   <th className="p-4">Security Level</th>
                   <th className="p-4">Logins</th>
                   <th className="p-4">Status</th>
@@ -288,10 +305,19 @@ function AdminUserDatabase() {
                       </td>
                       <td className="p-4 text-zinc-300 font-mono">{u.email}</td>
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1 bg-[#0a0407] border border-red-600/20 px-2 py-1 rounded text-[10px] text-zinc-400 font-mono">
-                          <FaKey size={9} className="text-red-400" />
-                          {u.password_hash || "Encrypted Hash"}
-                        </span>
+                        {u.email_verified ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] text-emerald-400 font-cyber font-bold">
+                            ✓ Verified
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleVerifyUser(u.id, u.name, u.email)}
+                            className="inline-flex items-center gap-1 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] text-amber-400 hover:bg-amber-500/30 font-cyber font-bold cursor-pointer transition-all"
+                            title="Click to Verify Email for User"
+                          >
+                            ⚠ Unverified (Click to Verify)
+                          </button>
+                        )}
                       </td>
                       <td className="p-4">
                         <span
@@ -314,6 +340,15 @@ function AdminUserDatabase() {
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          {!u.email_verified && (
+                            <button
+                              onClick={() => handleVerifyUser(u.id, u.name, u.email)}
+                              className="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-400 font-cyber text-[10px] font-bold transition-all cursor-pointer"
+                              title="Verify User Email"
+                            >
+                              Verify
+                            </button>
+                          )}
                           <button
                             onClick={() => setSelectedUser(u)}
                             className="p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 text-zinc-300 transition-all cursor-pointer"
@@ -386,25 +421,41 @@ function AdminUserDatabase() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-red-600/20 flex justify-between items-center">
-                <button
-                  onClick={() =>
-                    handleDeleteUser(
-                      selectedUser.id,
-                      selectedUser.name,
-                      selectedUser.email
-                    )
-                  }
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-400 font-cyber text-xs font-bold transition-all cursor-pointer"
-                >
-                  <FaTrash size={11} /> Delete User Account
-                </button>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-cyber text-xs font-bold cursor-pointer"
-                >
-                  Close Inspection
-                </button>
+              <div className="pt-3 border-t border-red-600/20 flex flex-wrap justify-between items-center gap-2">
+                {!selectedUser.email_verified && (
+                  <button
+                    onClick={() =>
+                      handleVerifyUser(
+                        selectedUser.id,
+                        selectedUser.name,
+                        selectedUser.email
+                      )
+                    }
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-400 font-cyber text-xs font-bold transition-all cursor-pointer shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                  >
+                    ✓ Verify Email &amp; Activate Account
+                  </button>
+                )}
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    onClick={() =>
+                      handleDeleteUser(
+                        selectedUser.id,
+                        selectedUser.name,
+                        selectedUser.email
+                      )
+                    }
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-400 font-cyber text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <FaTrash size={11} /> Delete
+                  </button>
+                  <button
+                    onClick={() => setSelectedUser(null)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-cyber text-xs font-bold cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>

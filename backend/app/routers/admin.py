@@ -110,6 +110,22 @@ def admin_delete_user(user_id: int, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+# Verify User Email (Admin Endpoint)
+@router.put("/users/{user_id}/verify-email")
+def admin_verify_user_email(user_id: int, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User account not found.")
+        
+        user.email_verified = True
+        user.verification_code = None
+        db.commit()
+        return {"message": f"User {user.email} (ID #{user_id}) email verified successfully.", "email_verified": True}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Forgot Password / Security Key - Request OTP
 @router.post("/forgot-security-key")
 def forgot_security_key(req: ForgotAdminKeyRequest):
