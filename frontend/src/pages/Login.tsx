@@ -80,30 +80,11 @@ function Login() {
     });
   };
 
-  const [deletedNotice, setDeletedNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const rawNotice = localStorage.getItem("guardianx_deleted_account_notice");
-      if (rawNotice) {
-        const parsed = JSON.parse(rawNotice);
-        setDeletedNotice(`⚠️ SYSTEM NOTICE: User account for ${parsed.name} (${parsed.email}) was deleted by Super-Admin on ${parsed.timestamp}.`);
-      }
-    } catch {}
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-
-    // Check if account was deleted by admin
-    try {
-      const deletedList = JSON.parse(localStorage.getItem("guardianx_deleted_users") || "[]");
-      if (deletedList.includes(form.email.trim().toLowerCase())) {
-        setLoginError(`⚠️ ACCOUNT DELETED: Your account (${form.email}) was deleted by an administrator. Access is disabled.`);
-        return;
-      }
-    } catch {}
 
     setIsScanning(true);
     setScanStep(0);
@@ -347,12 +328,7 @@ function Login() {
           </Link>
         </div>
 
-        {deletedNotice && (
-          <div className="mt-4 p-3 bg-red-600/15 border border-red-500/30 rounded-lg text-red-400 text-xs font-cyber flex items-center justify-between gap-2">
-            <span>{deletedNotice}</span>
-            <button type="button" onClick={() => { setDeletedNotice(null); localStorage.removeItem("guardianx_deleted_account_notice"); }} className="text-zinc-400 hover:text-white text-xs">✕</button>
-          </div>
-        )}
+
 
         {loginError && (
           <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-cyber flex flex-col gap-2">

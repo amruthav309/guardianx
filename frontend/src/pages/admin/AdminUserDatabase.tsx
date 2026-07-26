@@ -131,26 +131,7 @@ function AdminUserDatabase() {
         "danger"
       );
 
-      // 3. Store deletion notice for deleted user email
-      try {
-        const deletedList = JSON.parse(
-          localStorage.getItem("guardianx_deleted_users") || "[]"
-        );
-        if (!deletedList.includes(email.toLowerCase())) {
-          deletedList.push(email.toLowerCase());
-        }
-        localStorage.setItem("guardianx_deleted_users", JSON.stringify(deletedList));
 
-        localStorage.setItem(
-          "guardianx_deleted_account_notice",
-          JSON.stringify({
-            id,
-            name,
-            email,
-            timestamp: new Date().toLocaleString(),
-          })
-        );
-      } catch {}
 
       // 4. Invalidate user session if deleted user is currently stored as active user
       try {
