@@ -18,7 +18,7 @@ def generate_otp():
 
 
 def _send_email_async(receiver_email: str, otp: str):
-    print(f"\n🔒 [SECURITY DISPATCH] Preparing OTP Code: {otp} for {receiver_email}")
+    print(f"\n[SECURITY DISPATCH] Preparing OTP Code: {otp} for {receiver_email}")
 
     if not EMAIL or not PASSWORD:
         print("[NOTICE] EMAIL_ADDRESS or EMAIL_PASSWORD empty. Email delivery skipped.")
@@ -54,7 +54,7 @@ GuardianX Security Team
         server.login(EMAIL, PASSWORD)
         server.sendmail(EMAIL, receiver_email, message.as_string())
         server.quit()
-        print(f"✔ Verification Email Sent Successfully via SSL to {receiver_email}")
+        print(f"[SUCCESS] Verification Email Sent Successfully via SSL to {receiver_email}")
         return
     except Exception as ssl_err:
         print(f"[SSL Dispatch Notice]: {ssl_err}. Retrying via TLS Port 587...")
@@ -65,9 +65,9 @@ GuardianX Security Team
         server.login(EMAIL, PASSWORD)
         server.sendmail(EMAIL, receiver_email, message.as_string())
         server.quit()
-        print(f"✔ Verification Email Sent Successfully via TLS to {receiver_email}")
+        print(f"[SUCCESS] Verification Email Sent Successfully via TLS to {receiver_email}")
     except Exception as tls_err:
-        print(f"⚠️ [SMTP Authentication Error]: Google rejected email credentials ({tls_err}). Please generate a new Gmail App Password at myaccount.google.com/apppasswords.")
+        print(f"[SMTP Authentication Error]: Google rejected email credentials ({tls_err}). Please generate a new Gmail App Password at myaccount.google.com/apppasswords.")
 
 
 def send_verification_email(receiver_email: str, otp: str):
