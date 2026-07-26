@@ -41,7 +41,8 @@ def validate_password_strength(password: str):
 
 def create_user(
     db: Session,
-    user: UserCreate
+    user: UserCreate,
+    background_tasks = None
 ):
     validate_password_strength(user.password)
     clean_email = user.email.strip().lower()
@@ -67,7 +68,10 @@ def create_user(
             db.commit()
             db.refresh(existing_email)
             try:
-                send_verification_email(existing_email.email, otp)
+                if background_tasks:
+                    background_tasks.add_task(send_verification_email, existing_email.email, otp)
+                else:
+                    send_verification_email(existing_email.email, otp)
             except Exception as e:
                 print("Email Error:", e)
             return existing_email
@@ -103,13 +107,12 @@ def create_user(
     db.refresh(new_user)
 
     try:
-        send_verification_email(
-        new_user.email,
-        otp
-    )
+        if background_tasks:
+            background_tasks.add_task(send_verification_email, new_user.email, otp)
+        else:
+            send_verification_email(new_user.email, otp)
     except Exception as e:
        print("Email Error:", e)
-       print(f"[EMAIL SIMULATION] OTP for {new_user.email}: {otp}")
 
     return new_user
 
@@ -199,7 +202,8 @@ def verify_email(
 
 def resend_otp(
     db: Session,
-    email: str
+    email: str,
+    background_tasks = None
 ):
     clean_email = email.strip().lower()
 
@@ -221,13 +225,12 @@ def resend_otp(
     db.commit()
 
     try:
-        send_verification_email(
-        user.email,
-        otp
-    )
+        if background_tasks:
+            background_tasks.add_task(send_verification_email, user.email, otp)
+        else:
+            send_verification_email(user.email, otp)
     except Exception as e:
         print("Email Error:", e)
-        print(f"[EMAIL SIMULATION] OTP for {user.email}: {otp}")
 
     return otp
 

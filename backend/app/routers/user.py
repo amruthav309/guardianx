@@ -1,6 +1,6 @@
 import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -40,6 +40,7 @@ router = APIRouter()
 @router.post("/register")
 def register(
     user: UserCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
 
@@ -47,7 +48,8 @@ def register(
 
         new_user = create_user(
             db,
-            user
+            user,
+            background_tasks=background_tasks
         )
 
         return {
@@ -278,6 +280,7 @@ def verify(
 @router.post("/resend-otp")
 def resend(
     data: ResendOTP,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
 
@@ -285,7 +288,8 @@ def resend(
 
         resend_otp(
             db,
-            data.email
+            data.email,
+            background_tasks=background_tasks
         )
 
         return {
