@@ -355,8 +355,17 @@ function Login() {
         )}
 
         {loginError && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-cyber flex items-center gap-2">
-            ⚠ {loginError}
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-cyber flex flex-col gap-2">
+            <div>⚠ {loginError}</div>
+            {loginError.toLowerCase().includes("verify your email") && (
+              <button
+                type="button"
+                onClick={() => navigate("/verify-email", { state: { email: form.email } })}
+                className="mt-1 py-1.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded text-[11px] font-cyber text-center transition-all cursor-pointer shadow-[0_0_10px_rgba(6,182,212,0.3)]"
+              >
+                Go to Verification Screen & Resend OTP →
+              </button>
+            )}
           </div>
         )}
 

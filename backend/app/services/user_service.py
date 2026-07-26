@@ -54,9 +54,23 @@ def create_user(
     )
 
     if existing_email:
-        raise Exception(
-            "Email already registered."
-        )
+        if existing_email.email_verified:
+            raise Exception(
+                "Email already registered and verified. Please log in."
+            )
+        else:
+            otp = generate_otp()
+            existing_email.name = user.name.strip()
+            existing_email.username = clean_username
+            existing_email.password = hash_password(user.password)
+            existing_email.verification_code = otp
+            db.commit()
+            db.refresh(existing_email)
+            try:
+                send_verification_email(existing_email.email, otp)
+            except Exception as e:
+                print("Email Error:", e)
+            return existing_email
 
     existing_username = (
         db.query(User)
