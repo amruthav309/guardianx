@@ -8,10 +8,14 @@ function VerifyEmail() {
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || "amruthav309@gmail.com");
 
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(location.state?.otp || "");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    location.state?.otp
+      ? `✔ 6-Digit OTP Code (${location.state.otp}) dispatched to your email inbox.`
+      : ""
+  );
   const [msgType, setMsgType] = useState<"success" | "error">("success");
 
   const verifyOTP = async () => {
@@ -53,7 +57,12 @@ function VerifyEmail() {
       setResending(true);
       const res = await resendOTP(email);
       setMsgType("success");
-      setMessage(res?.message || "A new OTP code has been sent to your email inbox.");
+      if (res?.otp) {
+        setOtp(res.otp);
+        setMessage(`✔ Fresh 6-Digit OTP Code (${res.otp}) dispatched to ${email}!`);
+      } else {
+        setMessage(res?.message || "A new OTP code has been sent to your email inbox.");
+      }
     } catch (err: any) {
       setMsgType("error");
       const errDetail = err?.response?.data?.detail || err?.message || "Unable to resend OTP.";

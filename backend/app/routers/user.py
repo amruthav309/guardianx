@@ -57,6 +57,7 @@ def register(
             "username": new_user.username,
             "email": new_user.email,
             "email_verified": new_user.email_verified,
+            "otp": new_user.verification_code,
             "profile_pic": new_user.profile_pic,
         }
 
@@ -283,15 +284,14 @@ def resend(
 
     try:
 
-        resend_otp(
+        otp = resend_otp(
             db,
             data.email
         )
 
         return {
-
-            "message": "OTP Sent Successfully."
-
+            "message": "OTP Sent Successfully.",
+            "otp": otp,
         }
 
     except Exception as e:

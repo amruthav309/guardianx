@@ -19,7 +19,7 @@ def generate_otp():
 
 
 def _send_email_task(receiver_email: str, otp: str):
-    print(f"\n[SECURITY DISPATCH] Dispatched OTP Code: {otp} for {receiver_email}")
+    print(f"\n[SECURITY DISPATCH] Starting OTP Delivery: {otp} -> {receiver_email}")
 
     if not EMAIL or not PASSWORD:
         print("[NOTICE] EMAIL_ADDRESS or EMAIL_PASSWORD empty. Email delivery skipped.")
@@ -49,9 +49,9 @@ GuardianX Security Team
     message["Subject"] = subject
     message.attach(MIMEText(body, "plain"))
 
-    # 1. Try SSL Port 465 FIRST (Most reliable for Gmail SMTP)
+    # 1. Try SSL Port 465 FIRST
     try:
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10)
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=12)
         server.login(EMAIL, PASSWORD)
         server.sendmail(EMAIL, receiver_email, message.as_string())
         server.quit()
@@ -62,7 +62,7 @@ GuardianX Security Team
 
     # 2. Fallback to TLS Port 587
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=12)
         server.starttls()
         server.login(EMAIL, PASSWORD)
         server.sendmail(EMAIL, receiver_email, message.as_string())
@@ -70,15 +70,14 @@ GuardianX Security Team
         print(f"[SUCCESS] Verification Email Sent Successfully via TLS 587 to {receiver_email}")
         return True
     except Exception as tls_err:
-        print(f"[SMTP Authentication Error]: ({tls_err})")
+        print(f"[SMTP Error]: ({tls_err})")
         return False
 
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Dispatches OTP verification email asynchronously in a background thread.
-    Returns immediately so HTTP requests complete instantly without timeout.
+    Dispatches OTP verification email in a non-daemon thread to prevent worker thread cancellation.
     """
-    t = threading.Thread(target=_send_email_task, args=(receiver_email, otp), daemon=True)
+    t = threading.Thread(target=_send_email_task, args=(receiver_email, otp), daemon=False)
     t.start()
     return True
