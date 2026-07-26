@@ -18,8 +18,8 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 
-def _send_email_sync(receiver_email: str, otp: str):
-    print(f"\n[SECURITY DISPATCH] Preparing OTP Code: {otp} for {receiver_email}")
+def _send_email_task(receiver_email: str, otp: str):
+    print(f"\n[SECURITY DISPATCH] Dispatched OTP Code: {otp} for {receiver_email}")
 
     if not EMAIL or not PASSWORD:
         print("[NOTICE] EMAIL_ADDRESS or EMAIL_PASSWORD empty. Email delivery skipped.")
@@ -49,32 +49,36 @@ GuardianX Security Team
     message["Subject"] = subject
     message.attach(MIMEText(body, "plain"))
 
-    # Try SMTP_SSL on Port 465 first
+    # 1. Try TLS Port 587 first (Standard for cloud hosting environments like Render)
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=12) as server:
-            server.login(EMAIL, PASSWORD)
-            server.sendmail(EMAIL, receiver_email, message.as_string())
-        print(f"[SUCCESS] Verification Email Sent Successfully via SSL to {receiver_email}")
-        return True
-    except Exception as ssl_err:
-        print(f"[SSL Dispatch Notice]: {ssl_err}. Retrying via TLS Port 587...")
-
-    # Fallback to TLS Port 587
-    try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=12) as server:
-            server.starttls()
-            server.login(EMAIL, PASSWORD)
-            server.sendmail(EMAIL, receiver_email, message.as_string())
-        print(f"[SUCCESS] Verification Email Sent Successfully via TLS to {receiver_email}")
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=6)
+        server.starttls()
+        server.login(EMAIL, PASSWORD)
+        server.sendmail(EMAIL, receiver_email, message.as_string())
+        server.quit()
+        print(f"[SUCCESS] Verification Email Sent Successfully via TLS 587 to {receiver_email}")
         return True
     except Exception as tls_err:
-        print(f"[SMTP Authentication Error]: ({tls_err})")
+        print(f"[TLS 587 Notice]: {tls_err}. Retrying via SSL Port 465...")
+
+    # 2. Try SSL Port 465 fallback
+    try:
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=6)
+        server.login(EMAIL, PASSWORD)
+        server.sendmail(EMAIL, receiver_email, message.as_string())
+        server.quit()
+        print(f"[SUCCESS] Verification Email Sent Successfully via SSL 465 to {receiver_email}")
+        return True
+    except Exception as ssl_err:
+        print(f"[SSL 465 Error]: {ssl_err}")
         return False
 
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Dispatches OTP verification email.
-    Executes email sending synchronously to guarantee delivery before returning response.
+    Dispatches OTP verification email asynchronously in a non-blocking background thread.
+    Returns immediately so HTTP requests complete instantly without timeout.
     """
-    return _send_email_sync(receiver_email, otp)
+    t = threading.Thread(target=_send_email_task, args=(receiver_email, otp), daemon=True)
+    t.start()
+    return True
