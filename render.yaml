@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: guardianx
+    runtime: python
+    buildCommand: |
+      apt-get update && apt-get install -y tesseract-ocr libgl1-mesa-glx libglib2.0-0 nodejs npm
+      cd frontend && npm install && npm run build && cd ..
+      cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guardianx-db
+          property: connectionString
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: OTP_EXPIRY
+        value: "300"
+      - key: APP_NAME
+        value: GuardianX
+      - key: APP_VERSION
+        value: "1.0"
+
+databases:
+  - name: guardianx-db
+    databaseName: guardianx
+    user: guardianx_user
+    plan: free

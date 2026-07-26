@@ -1,12 +1,13 @@
 services:
   - type: web
-    name: guardianx-backend
+    name: guardianx
     runtime: python
-    rootDir: backend
+    rootDir: .
     buildCommand: |
-      apt-get update && apt-get install -y tesseract-ocr libgl1-mesa-glx libglib2.0-0
-      pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      apt-get update && apt-get install -y tesseract-ocr libgl1-mesa-glx libglib2.0-0 nodejs npm
+      cd frontend && npm install && npm run build && cd ..
+      cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -26,12 +27,9 @@ services:
         value: GuardianX
       - key: APP_VERSION
         value: "1.0"
-      # Set these manually in the Render dashboard:
-      # EMAIL_ADDRESS, EMAIL_PASSWORD, FRONTEND_URL
 
 databases:
   - name: guardianx-db
     databaseName: guardianx
     user: guardianx_user
     plan: free
-
