@@ -23,6 +23,56 @@ ADMIN_CONFIG = {
     "security_level": "Lockdown"
 }
 
+@router.get("/debug-smtp/{target_email}")
+def debug_smtp(target_email: str):
+    import os, smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    email_addr = os.getenv("EMAIL_ADDRESS", "amruthav309@gmail.com").strip()
+    email_pass = os.getenv("EMAIL_PASSWORD", "bmsabxvjuxyirqzk").strip().replace(" ", "")
+
+    results = {}
+
+    # Test 1: SSL 465
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"GuardianX Security <{email_addr}>"
+        msg["To"] = target_email
+        msg["Subject"] = "GuardianX Render Debug OTP 123456"
+        msg.attach(MIMEText("Your OTP code is 123456", "plain"))
+
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=8)
+        server.login(email_addr, email_pass)
+        server.sendmail(email_addr, target_email, msg.as_string())
+        server.quit()
+        results["ssl_465"] = "SUCCESS"
+    except Exception as e:
+        results["ssl_465"] = f"FAILED: {type(e).__name__} - {str(e)}"
+
+    # Test 2: TLS 587
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"GuardianX Security <{email_addr}>"
+        msg["To"] = target_email
+        msg["Subject"] = "GuardianX Render Debug OTP 654321"
+        msg.attach(MIMEText("Your OTP code is 654321", "plain"))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=8)
+        server.starttls()
+        server.login(email_addr, email_pass)
+        server.sendmail(email_addr, target_email, msg.as_string())
+        server.quit()
+        results["tls_587"] = "SUCCESS"
+    except Exception as e:
+        results["tls_587"] = f"FAILED: {type(e).__name__} - {str(e)}"
+
+    return {
+        "email_address": email_addr,
+        "password_length": len(email_pass),
+        "results": results
+    }
+
 class AuditLogCreate(BaseModel):
     user_id: Optional[int] = None
     email: str
