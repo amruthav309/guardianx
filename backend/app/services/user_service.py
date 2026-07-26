@@ -88,10 +88,14 @@ def create_user(
     db.commit()
     db.refresh(new_user)
 
-    send_verification_email(
+    try:
+        send_verification_email(
         new_user.email,
         otp
     )
+    except Exception as e:
+       print("Email Error:", e)
+       print(f"[EMAIL SIMULATION] OTP for {new_user.email}: {otp}")
 
     return new_user
 
@@ -202,13 +206,16 @@ def resend_otp(
 
     db.commit()
 
-    send_verification_email(
+    try:
+        send_verification_email(
         user.email,
         otp
     )
+    except Exception as e:
+        print("Email Error:", e)
+        print(f"[EMAIL SIMULATION] OTP for {user.email}: {otp}")
 
     return otp
-
 
 # ==========================================
 # Profile
@@ -292,13 +299,16 @@ def send_forgot_password_otp(
 
     db.commit()
 
-    send_verification_email(
-        user.email,
-        otp
-    )
+    try:
+        send_verification_email(
+            user.email,
+            otp
+        )
+    except Exception as e:
+        print("Email Error:", e)
+        print(f"[EMAIL SIMULATION] OTP for {user.email}: {otp}")
 
     return True
-
 # ==========================================
 # Verify Forgot Password OTP
 # ==========================================
