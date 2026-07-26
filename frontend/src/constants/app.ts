@@ -25,4 +25,4 @@ export const getApiBaseUrl = (): string => {
   return url;
 };
 
-export const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
