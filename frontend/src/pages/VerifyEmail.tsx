@@ -29,9 +29,7 @@ function VerifyEmail() {
     try {
       setLoading(true);
       await verifyEmail(email, otp);
-      setMsgType("success");
-      setMessage("Email Verified Successfully. Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
+      navigate("/login");
     } catch (err: any) {
       setMsgType("error");
       setMessage(
