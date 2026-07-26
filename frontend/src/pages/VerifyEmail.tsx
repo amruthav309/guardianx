@@ -14,6 +14,8 @@ function VerifyEmail() {
   const [message, setMessage] = useState("");
   const [msgType, setMsgType] = useState<"success" | "error">("success");
 
+  const [previewOtp, setPreviewOtp] = useState(location.state?.otp_code || "");
+
   const verifyOTP = async () => {
     setMessage("");
     if (otp.length !== 6) {
@@ -26,7 +28,7 @@ function VerifyEmail() {
       await verifyEmail(email, otp);
       setMsgType("success");
       setMessage("Email Verified Successfully. Redirecting to login...");
-      setTimeout(() => navigate("/login"), 2000);
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err: any) {
       setMsgType("error");
       setMessage(
@@ -43,9 +45,12 @@ function VerifyEmail() {
     setMessage("");
     try {
       setResending(true);
-      await resendOTP(email);
+      const res = await resendOTP(email);
+      if (res?.otp_code) {
+        setPreviewOtp(res.otp_code);
+      }
       setMsgType("success");
-      setMessage("OTP has been resent. Check your email inbox.");
+      setMessage("OTP code has been generated and sent to your email.");
     } catch {
       setMsgType("error");
       setMessage("Unable to resend OTP. Please try again.");
@@ -74,13 +79,21 @@ function VerifyEmail() {
         </div>
 
         {/* Email display */}
-        <div className="flex items-center gap-3 bg-[#0e0e11] border border-zinc-800 rounded-xl p-4 mb-6">
+        <div className="flex items-center gap-3 bg-[#0e0e11] border border-zinc-800 rounded-xl p-4 mb-4">
           <FaEnvelope className="text-cyan-400 text-lg flex-shrink-0" />
           <div>
             <p className="text-[10px] text-zinc-500 font-cyber uppercase">OTP Sent To</p>
             <p className="text-sm text-emerald-400 font-mono mt-0.5">{email || "your email"}</p>
           </div>
         </div>
+
+        {/* Verification Code Preview / Auto-fill */}
+        {previewOtp && (
+          <div className="mb-6 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-300 text-xs font-cyber flex items-center justify-between">
+            <span>🔒 Verification Code: <strong className="text-white font-mono text-sm tracking-widest">{previewOtp}</strong></span>
+            <button type="button" onClick={() => setOtp(previewOtp)} className="bg-cyan-500 hover:bg-cyan-400 text-black px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer">Auto-Fill</button>
+          </div>
+        )}
 
         {/* OTP Input */}
         <div className="mb-2">

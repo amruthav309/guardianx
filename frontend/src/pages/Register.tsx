@@ -47,8 +47,8 @@ function Register() {
       const res = await registerUser(form);
       setSuccess(res.message || "Registration Successful. Please verify your email.");
       setTimeout(() => {
-        navigate("/verify-email", { state: { email: form.email } });
-      }, 2000);
+        navigate("/verify-email", { state: { email: form.email, otp_code: res.otp_code } });
+      }, 1500);
     } catch (err: any) {
       const serverError = err.response?.data?.detail || err.response?.data?.message || err.message;
       setError(serverError || "Registration Failed. Please check network connection.");
