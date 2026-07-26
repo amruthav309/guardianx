@@ -1,6 +1,7 @@
 import os
 import random
 import smtplib
+import threading
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,8 +17,12 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 
-def send_verification_email(receiver_email: str, otp: str):
-    print(f"\n[EMAIL SIMULATION] Sent OTP Verification Code: {otp} to {receiver_email}\n")
+def _send_email_async(receiver_email: str, otp: str):
+    print(f"\n🔒 [EMAIL SECURITY OTP] Sent OTP Code: {otp} to {receiver_email}\n")
+
+    if not EMAIL or not PASSWORD:
+        print("[NOTICE] EMAIL_ADDRESS or EMAIL_PASSWORD not set. Email delivery skipped; check OTP in logs above.")
+        return
 
     subject = "GuardianX - Email Verification"
 
@@ -39,31 +44,23 @@ GuardianX Security Team
 """
 
     message = MIMEMultipart()
-
     message["From"] = EMAIL
     message["To"] = receiver_email
     message["Subject"] = subject
-
     message.attach(MIMEText(body, "plain"))
 
     try:
-
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=4)
         server.starttls()
-
         server.login(EMAIL, PASSWORD)
-
-        server.sendmail(
-            EMAIL,
-            receiver_email,
-            message.as_string()
-        )
-
+        server.sendmail(EMAIL, receiver_email, message.as_string())
         server.quit()
-
-        print("Verification Email Sent Successfully")
-
+        print(f"Verification Email Sent Successfully to {receiver_email}")
     except Exception as e:
+        print(f"Email Dispatch Notice ({e}): OTP logged above for verification.")
 
-        print("Email Error:", e)
+
+def send_verification_email(receiver_email: str, otp: str):
+    thread = threading.Thread(target=_send_email_async, args=(receiver_email, otp))
+    thread.daemon = True
+    thread.start()
