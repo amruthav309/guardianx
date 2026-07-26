@@ -1,7 +1,6 @@
 import os
 import random
 import smtplib
-import threading
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -76,8 +75,6 @@ GuardianX Security Team
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Dispatches OTP verification email in a non-daemon thread to prevent worker thread cancellation.
+    Dispatches OTP verification email synchronously to guarantee delivery.
     """
-    t = threading.Thread(target=_send_email_task, args=(receiver_email, otp), daemon=False)
-    t.start()
-    return True
+    return _send_email_task(receiver_email, otp)
