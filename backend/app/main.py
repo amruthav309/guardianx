@@ -25,6 +25,8 @@ from app.models.history import History
 from app.models.audit_log import AuditLog
 
 
+Base.metadata.create_all(bind=engine)
+
 # Database Migrations - Dynamically check and add security_level column if not present
 try:
     with engine.connect() as conn:
@@ -48,8 +50,6 @@ try:
             print("Successfully migrated database: added security_level column to users table.")
 except Exception as e:
     print(f"Database migration skipped/failed: {e}")
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="GuardianX API",
