@@ -10,7 +10,7 @@ export const getApiBaseUrl = (): string => {
   if (typeof window !== "undefined") {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (!isLocal && (!url || url.includes("localhost") || url.includes("127.0.0.1"))) {
-      url = "https://guardianx-backend-6zv3.onrender.com";
+      url = "https://guardianx-production-d924.up.railway.app";
     }
   }
 
