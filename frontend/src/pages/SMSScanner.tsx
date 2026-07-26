@@ -30,7 +30,7 @@ function SMSScanner() {
     try {
       const user = getCurrentUser();
       const res = await scanSMS({
-        user_id: user.id,
+        user_id: user?.id,
         sms: sms,
       });
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.routers import user
 from app.routers import email
@@ -58,7 +59,18 @@ app = FastAPI(
 
 # Ensure uploads directory exists
 Path("uploads").mkdir(exist_ok=True)
+
+# React build directory
+STATIC_DIR = Path(__file__).parent / "static"
+
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount(
+    "/assets",
+    StaticFiles(directory=STATIC_DIR / "assets"),
+    name="assets"
+)
+
+
 
 # CORS — allow local dev, production frontend, and all Vercel preview deployments
 FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
@@ -152,11 +164,41 @@ app.include_router(
     tags=["Admin Portal"]
 )
 
-@app.get("/")
-def home():
-    return {
-        "application": "GuardianX",
-        "version": "1.0",
-        "status": "Running",
-        "message": "GuardianX Backend is running successfully 🚀"
-    }
+
+
+# Serve the built React app
+@app.get("/", include_in_schema=False)
+async def serve_home():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+# Serve React routes (dashboard, login, analytics, etc.)
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_react(full_path: str):
+
+    # Let FastAPI handle API endpoints normally
+    if full_path.startswith((
+        "users",
+        "email",
+        "url",
+        "sms",
+        "password",
+        "upload",
+        "history",
+        "analytics",
+        "report",
+        "admin",
+        "uploads",
+        "assets",
+        "docs",
+        "redoc",
+        "openapi.json",
+        "favicon.svg",
+        "icons.svg"
+    )):
+        # Let mounted routes (/assets, /uploads, APIs) handle these requests.
+       from fastapi import HTTPException
+       raise HTTPException(status_code=404)
+
+    # React Router fallback
+    return FileResponse(STATIC_DIR / "index.html")

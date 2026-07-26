@@ -22,7 +22,7 @@ router = APIRouter(
 # Add History
 # ==========================================
 
-@router.post("/")
+@router.post("")
 def create_history(
     data: HistoryCreate,
     db: Session = Depends(get_db),
@@ -42,7 +42,7 @@ def create_history(
 # Get History
 # ==========================================
 
-@router.get("/")
+@router.get("")
 def read_history(
     user_id: int,
     db: Session = Depends(get_db),

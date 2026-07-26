@@ -31,7 +31,7 @@ function EmailScanner() {
     try {
       const user = getCurrentUser();
       const res = await scanEmail({
-        user_id: user.id,
+        user_id: user?.id,
         email: email,
       });
 

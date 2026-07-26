@@ -30,7 +30,7 @@ function URLScanner() {
     try {
       const user = getCurrentUser();
       const res = await scanURL({
-        user_id: user.id,
+        user_id: user?.id,
         url: url,
       });
 

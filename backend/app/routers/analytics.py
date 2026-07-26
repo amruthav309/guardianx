@@ -7,7 +7,7 @@ from app.utils.timezone import get_ist_str
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 def dashboard_analytics(user_id: int):
 
     with engine.connect() as connection:
