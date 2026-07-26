@@ -424,4 +424,30 @@ def update_user_security_level(
     return {
         "message": "Security level updated successfully.",
         "security_level": user.security_level
-    }
+    }
+
+from app.models.user import User
+
+@router.delete("/admin/delete-user/{email}")
+def delete_user_by_email(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == email.lower())
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+    db.delete(user)
+    db.commit()
+
+    return {
+        "message": "User deleted successfully."
+    }
