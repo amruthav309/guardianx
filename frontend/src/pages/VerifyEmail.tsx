@@ -6,7 +6,7 @@ import { FaShieldAlt, FaEnvelope } from "react-icons/fa";
 function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || "";
+  const [email, setEmail] = useState(location.state?.email || "amruthav309@gmail.com");
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,6 +16,11 @@ function VerifyEmail() {
 
   const verifyOTP = async () => {
     setMessage("");
+    if (!email || !email.includes("@")) {
+      setMsgType("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
     if (otp.length !== 6) {
       setMsgType("error");
       setMessage("Please enter a valid 6-digit OTP.");
@@ -41,14 +46,20 @@ function VerifyEmail() {
 
   const resendOTPHandler = async () => {
     setMessage("");
+    if (!email || !email.includes("@")) {
+      setMsgType("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
     try {
       setResending(true);
-      await resendOTP(email);
+      const res = await resendOTP(email);
       setMsgType("success");
-      setMessage("A new OTP code has been sent to your email inbox.");
-    } catch {
+      setMessage(res?.message || "A new OTP code has been sent to your email inbox.");
+    } catch (err: any) {
       setMsgType("error");
-      setMessage("Unable to resend OTP. Please try again.");
+      const errDetail = err?.response?.data?.detail || err?.message || "Unable to resend OTP.";
+      setMessage(errDetail);
     } finally {
       setResending(false);
     }
@@ -73,12 +84,18 @@ function VerifyEmail() {
           <p className="text-zinc-400 text-sm mt-1">EMAIL IDENTITY VERIFICATION</p>
         </div>
 
-        {/* Email display */}
-        <div className="flex items-center gap-3 bg-[#0e0e11] border border-zinc-800 rounded-xl p-4 mb-6">
-          <FaEnvelope className="text-cyan-400 text-lg flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-zinc-500 font-cyber uppercase">OTP Sent To</p>
-            <p className="text-sm text-emerald-400 font-mono mt-0.5">{email || "your email"}</p>
+        {/* Target Email Input */}
+        <div className="mb-4">
+          <label className="text-xs text-zinc-400 block mb-1 uppercase font-cyber font-semibold">Target Email Address</label>
+          <div className="flex items-center gap-2.5 bg-[#0e0e11] border border-zinc-800 rounded-xl p-3 focus-within:border-cyan-500 transition-colors">
+            <FaEnvelope className="text-cyan-400 text-base flex-shrink-0 ml-1" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-transparent w-full text-sm text-emerald-400 font-mono outline-none"
+              placeholder="identity@domain.com"
+            />
           </div>
         </div>
 
