@@ -1,16 +1,14 @@
 import os
 import random
-import smtplib
-
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Pure Direct Gmail SMTP Credentials
-EMAIL = os.getenv("EMAIL_ADDRESS", "amruthav309@gmail.com").strip()
-PASSWORD = os.getenv("EMAIL_PASSWORD", "bmsabxvjuxyirqzk").strip().replace(" ", "")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 
 def generate_otp():
@@ -19,57 +17,66 @@ def generate_otp():
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Sends a 6-digit verification OTP code directly to the receiver's inbox
-    using Gmail SMTP (amruthav309@gmail.com).
+    Sends GuardianX verification OTP using the Resend HTTPS API.
     """
-    print(f"\n[SECURITY DISPATCH] Sending OTP {otp} -> {receiver_email} via Gmail SMTP...")
 
-    if not EMAIL or not PASSWORD:
-        print("[ERROR] EMAIL_ADDRESS or EMAIL_PASSWORD empty. Dispatch cancelled.")
+    print(
+        f"\n[SECURITY DISPATCH] "
+        f"Sending OTP {otp} -> {receiver_email} via Resend..."
+    )
+
+    if not RESEND_API_KEY:
+        print("[ERROR] RESEND_API_KEY is missing.")
         return False
 
     subject = f"GuardianX Verification Code: {otp}"
 
-    body = f"""Hello,
+    html_body = f"""
+    <html>
+        <body>
+            <h2>GuardianX AI Cyber Security Platform</h2>
 
-Welcome to GuardianX AI Cyber Security Platform!
+            <p>Your 6-digit email verification code is:</p>
 
-Your 6-Digit Email Verification Code is:
+            <h1>{otp}</h1>
 
-  {otp}
+            <p>This code is valid for 5 minutes.</p>
 
-This code is valid for 5 minutes. Please enter this code on the verification screen to activate your account.
+            <p>
+                Enter this code on the GuardianX verification screen
+                to activate your account.
+            </p>
 
-If you didn't request this verification code, please ignore this email.
+            <p>
+                If you didn't request this verification code,
+                please ignore this email.
+            </p>
 
-Best regards,
-GuardianX Security Team
-"""
+            <p>
+                Best regards,<br>
+                GuardianX Security Team
+            </p>
+        </body>
+    </html>
+    """
 
-    message = MIMEMultipart()
-    message["From"] = f"GuardianX Security <{EMAIL}>"
-    message["To"] = receiver_email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
-
-    # 1. Try Gmail SSL Port 465 Primary
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
-            server.login(EMAIL, PASSWORD)
-            server.sendmail(EMAIL, receiver_email, message.as_string())
-        print(f"[SUCCESS] Verification Email Sent via Gmail SSL (Port 465) to {receiver_email}")
-        return True
-    except Exception as ssl_err:
-        print(f"[SSL Port 465 Notice]: {ssl_err}. Retrying via Gmail TLS (Port 587)...")
+        params = {
+            "from": "GuardianX <onboarding@resend.dev>",
+            "to": [receiver_email],
+            "subject": subject,
+            "html": html_body,
+        }
 
-    # 2. Fallback to Gmail TLS Port 587
-    try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.starttls()
-            server.login(EMAIL, PASSWORD)
-            server.sendmail(EMAIL, receiver_email, message.as_string())
-        print(f"[SUCCESS] Verification Email Sent via Gmail TLS (Port 587) to {receiver_email}")
+        response = resend.Emails.send(params)
+
+        print(
+            f"[SUCCESS] Verification email sent to {receiver_email}"
+        )
+        print(f"[RESEND RESPONSE] {response}")
+
         return True
-    except Exception as tls_err:
-        print(f"[ERROR] Gmail SMTP Dispatch Failed: {tls_err}")
+
+    except Exception as error:
+        print(f"[ERROR] Resend email failed: {error}")
         return False
