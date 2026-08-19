@@ -1,15 +1,21 @@
 import os
 import random
-import smtplib
-
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "").strip()
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip().replace(" ", "")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "").strip()
+
+# IMPORTANT:
+# This must be an email address that you have added and verified
+# as a sender inside Brevo.
+BREVO_SENDER_EMAIL = os.getenv(
+    "BREVO_SENDER_EMAIL",
+    "amruthav309@gmail.com"
+).strip()
+
+BREVO_SENDER_NAME = "GuardianX Security"
 
 
 def generate_otp():
@@ -18,76 +24,91 @@ def generate_otp():
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Sends GuardianX verification OTP using Gmail SMTP.
+    Send GuardianX OTP through Brevo Transactional Email API.
     """
 
     print(
         f"\n[SECURITY DISPATCH] "
-        f"Sending OTP {otp} -> {receiver_email} via Gmail SMTP..."
+        f"Sending OTP {otp} -> {receiver_email} via Brevo API..."
     )
 
-    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
-        print("[ERROR] EMAIL_ADDRESS or EMAIL_PASSWORD is missing.")
+    if not BREVO_API_KEY:
+        print("[ERROR] BREVO_API_KEY is missing.")
         return False
 
-    subject = f"GuardianX Verification Code: {otp}"
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    body = f"""
-Hello,
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+    }
 
-Welcome to GuardianX AI Cyber Security Platform!
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <h2>GuardianX AI Cyber Security Platform</h2>
 
-Your 6-digit email verification code is:
+        <p>Your GuardianX email verification code is:</p>
 
-{otp}
+        <h1>{otp}</h1>
 
-This code is valid for 5 minutes.
+        <p>This code is valid for <b>5 minutes</b>.</p>
 
-Enter this code on the GuardianX verification screen
-to activate your account.
+        <p>
+            Enter this code on GuardianX to verify your email
+            and activate your account.
+        </p>
 
-If you didn't request this verification code,
-please ignore this email.
+        <p>
+            If you did not request this code, you can safely ignore
+            this email.
+        </p>
 
-Best regards,
-GuardianX Security Team
-"""
+        <p>
+            Regards,<br>
+            <b>GuardianX Security Team</b>
+        </p>
+    </body>
+    </html>
+    """
 
-    message = MIMEMultipart()
-    message["From"] = f"GuardianX Security <{EMAIL_ADDRESS}>"
-    message["To"] = receiver_email
-    message["Subject"] = subject
+    payload = {
+        "sender": {
+            "name": BREVO_SENDER_NAME,
+            "email": BREVO_SENDER_EMAIL
+        },
+        "to": [
+            {
+                "email": receiver_email
+            }
+        ],
+        "subject": f"GuardianX Verification Code: {otp}",
+        "htmlContent": html_body
+    }
 
-    message.attach(MIMEText(body, "plain"))
-
-    # Gmail SMTP
     try:
-        with smtplib.SMTP_SSL(
-            "smtp.gmail.com",
-            465,
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
             timeout=20
-        ) as server:
-
-            server.login(
-                EMAIL_ADDRESS,
-                EMAIL_PASSWORD
-            )
-
-            server.sendmail(
-                EMAIL_ADDRESS,
-                receiver_email,
-                message.as_string()
-            )
-
-        print(
-            f"[SUCCESS] Verification email sent to {receiver_email}"
         )
 
-        return True
+        print(f"[BREVO STATUS] {response.status_code}")
+        print(f"[BREVO RESPONSE] {response.text}")
+
+        if 200 <= response.status_code < 300:
+            print(
+                f"[SUCCESS] Verification email sent to "
+                f"{receiver_email}"
+            )
+            return True
+
+        print("[ERROR] Brevo rejected the email.")
+        return False
 
     except Exception as error:
-        print(
-            f"[ERROR] Gmail SMTP email failed: {error}"
-        )
-
+        print(f"[ERROR] Brevo API failed: {error}")
         return False
