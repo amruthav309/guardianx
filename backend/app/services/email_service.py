@@ -1,14 +1,15 @@
 import os
 import random
-import resend
+import smtplib
+
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 
 load_dotenv()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "").strip()
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip().replace(" ", "")
 
 
 def generate_otp():
@@ -17,66 +18,76 @@ def generate_otp():
 
 def send_verification_email(receiver_email: str, otp: str):
     """
-    Sends GuardianX verification OTP using the Resend HTTPS API.
+    Sends GuardianX verification OTP using Gmail SMTP.
     """
 
     print(
         f"\n[SECURITY DISPATCH] "
-        f"Sending OTP {otp} -> {receiver_email} via Resend..."
+        f"Sending OTP {otp} -> {receiver_email} via Gmail SMTP..."
     )
 
-    if not RESEND_API_KEY:
-        print("[ERROR] RESEND_API_KEY is missing.")
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("[ERROR] EMAIL_ADDRESS or EMAIL_PASSWORD is missing.")
         return False
 
     subject = f"GuardianX Verification Code: {otp}"
 
-    html_body = f"""
-    <html>
-        <body>
-            <h2>GuardianX AI Cyber Security Platform</h2>
+    body = f"""
+Hello,
 
-            <p>Your 6-digit email verification code is:</p>
+Welcome to GuardianX AI Cyber Security Platform!
 
-            <h1>{otp}</h1>
+Your 6-digit email verification code is:
 
-            <p>This code is valid for 5 minutes.</p>
+{otp}
 
-            <p>
-                Enter this code on the GuardianX verification screen
-                to activate your account.
-            </p>
+This code is valid for 5 minutes.
 
-            <p>
-                If you didn't request this verification code,
-                please ignore this email.
-            </p>
+Enter this code on the GuardianX verification screen
+to activate your account.
 
-            <p>
-                Best regards,<br>
-                GuardianX Security Team
-            </p>
-        </body>
-    </html>
-    """
+If you didn't request this verification code,
+please ignore this email.
 
+Best regards,
+GuardianX Security Team
+"""
+
+    message = MIMEMultipart()
+    message["From"] = f"GuardianX Security <{EMAIL_ADDRESS}>"
+    message["To"] = receiver_email
+    message["Subject"] = subject
+
+    message.attach(MIMEText(body, "plain"))
+
+    # Gmail SMTP
     try:
-        params = {
-            "from": "GuardianX <onboarding@resend.dev>",
-            "to": [receiver_email],
-            "subject": subject,
-            "html": html_body,
-        }
+        with smtplib.SMTP_SSL(
+            "smtp.gmail.com",
+            465,
+            timeout=20
+        ) as server:
 
-        response = resend.Emails.send(params)
+            server.login(
+                EMAIL_ADDRESS,
+                EMAIL_PASSWORD
+            )
+
+            server.sendmail(
+                EMAIL_ADDRESS,
+                receiver_email,
+                message.as_string()
+            )
 
         print(
             f"[SUCCESS] Verification email sent to {receiver_email}"
         )
-        print(f"[RESEND RESPONSE] {response}")
 
         return True
 
     except Exception as error:
-        print(f"[ERROR] Resend email failed: {error}")
+        print(
+            f"[ERROR] Gmail SMTP email failed: {error}"
+        )
+
         return False
