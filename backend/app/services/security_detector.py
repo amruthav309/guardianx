@@ -93,10 +93,12 @@ def extract_urls(text):
     return re.findall(pattern, text)
 
 def is_trusted_domain(domain):
+    domain = domain.lower().strip().rstrip(".")
 
-    domain = domain.lower()
-
-    return any(domain.endswith(d) for d in TRUSTED_DOMAINS)
+    return any(
+        domain == trusted or domain.endswith("." + trusted)
+        for trusted in TRUSTED_DOMAINS
+    )
 
 def bad_tld(domain):
 
@@ -113,83 +115,118 @@ def is_ip(domain):
 
 def spoofed_brand(domain):
 
-    for trusted in TRUSTED_DOMAINS:
-
-        similarity = difflib.SequenceMatcher(
-            None,
-            domain,
-            trusted
-        ).ratio()
-
-        if similarity > 0.82 and domain != trusted:
-
-            return True, trusted
-
-    return False, None
+    labels = domain.lower().split(".")
 
     for trusted in TRUSTED_DOMAINS:
 
-        similarity = difflib.SequenceMatcher(
-            None,
-            domain,
-            trusted
-        ).ratio()
+        trusted_labels = trusted.split(".")
 
-        if similarity > 0.82 and domain != trusted:
+        brand = trusted_labels[0]
 
-            return True, trusted
+        for label in labels:
+
+            if label == brand:
+                continue
+
+            similarity = difflib.SequenceMatcher(
+                None,
+                label,
+                brand
+            ).ratio()
+
+            if similarity >= 0.80 and len(label) >= 4:
+                return True, trusted
 
     return False, None
-
 def analyze_url(url):
 
     score = 0
-
     reasons = []
 
-    parsed = urlparse(url)
+    url = url.strip()
 
-    domain = parsed.netloc.replace("www.", "")
+    if not url:
+        return 0, ["Empty URL"]
 
-    if parsed.scheme != "https":
+    # Handle URLs without an explicit scheme
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", url):
+        url = "https://" + url
+
+    try:
+        parsed = urlparse(url)
+        domain = (parsed.hostname or "").lower().rstrip(".")
+
+    except ValueError:
+        return 100, ["Invalid URL structure"]
+
+    if not domain:
+        return 100, ["Missing or invalid hostname"]
+
+    # HTTP is less secure than HTTPS
+    if parsed.scheme.lower() != "https":
         score += 15
-        reasons.append("Uses HTTP")
+        reasons.append("Does not use HTTPS")
 
-    if is_trusted_domain(domain):
+    # Misleading username or password in URL
+    if parsed.username is not None or parsed.password is not None:
+        score += 40
+        reasons.append("URL contains misleading user information")
 
-        score -= 40
+    # IP address instead of a normal domain
+    if is_ip(domain):
+        score += 40
+        reasons.append("URL uses an IP address")
 
-    else:
+    # Punycode / internationalized domain
+    if "xn--" in domain:
+        score += 30
+        reasons.append("Internationalized or potentially deceptive domain")
 
-        score += 20
-        reasons.append("Unknown domain")
+    # Check trusted domain correctly
+    trusted = is_trusted_domain(domain)
 
+    if not trusted:
+        score += 10
+        reasons.append("Domain is not in the trusted-domain list")
+
+    # Suspicious extensions
     if bad_tld(domain):
-
         score += 25
         reasons.append("Suspicious domain extension")
 
-    if is_ip(domain):
-
-        score += 30
-        reasons.append("Uses IP Address")
-
+    # Brand impersonation
     fake, original = spoofed_brand(domain)
 
     if fake:
-
-        score += 45
+        score += 40
         reasons.append(
-            f"Looks similar to {original}"
+            f"Possible impersonation of {original}"
         )
 
-    if len(url) > 100:
-
+    # URL length
+    if len(url) > 120:
         score += 10
-        reasons.append("Very long URL")
+        reasons.append("Unusually long URL")
+
+    # Common URL shorteners
+    shorteners = {
+        "bit.ly",
+        "tinyurl.com",
+        "t.co",
+        "is.gd",
+        "cutt.ly",
+    }
+
+    if domain in shorteners:
+        score += 25
+        reasons.append("URL uses a link-shortening service")
+
+    # Suspicious URL characters
+    if "%" in parsed.path:
+        score += 5
+        reasons.append("URL contains encoded characters")
 
     return score, reasons
-
 # -----------------------------
 # Credential Theft Detection
 # -----------------------------
