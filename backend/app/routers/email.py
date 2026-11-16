@@ -27,7 +27,7 @@ def scan_email(
         }
 
     print("\n===== EMAIL RECEIVED =====")
-    print(email)
+    print("Email received for security scanning.")
 
     result = detect_email(email)
 
