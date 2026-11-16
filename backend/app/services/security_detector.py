@@ -113,21 +113,27 @@ def is_ip(domain):
         return False
 
 
+
 def spoofed_brand(domain):
 
-    labels = domain.lower().split(".")
+    domain = domain.lower().strip().rstrip(".")
+
+    labels = domain.split(".")
 
     for trusted in TRUSTED_DOMAINS:
 
-        trusted_labels = trusted.split(".")
-
-        brand = trusted_labels[0]
+        brand = trusted.split(".")[0]
 
         for label in labels:
 
             if label == brand:
                 continue
 
+            # Detect brand names embedded in deceptive labels
+            if brand in label and len(label) > len(brand):
+                return True, trusted
+
+            # Detect similar-looking brand names
             similarity = difflib.SequenceMatcher(
                 None,
                 label,
@@ -137,7 +143,15 @@ def spoofed_brand(domain):
             if similarity >= 0.80 and len(label) >= 4:
                 return True, trusted
 
+    # Detect a trusted domain embedded in a larger hostname
+    for trusted in TRUSTED_DOMAINS:
+
+        if trusted in domain and domain != trusted:
+            if not domain.endswith("." + trusted):
+                return True, trusted
+
     return False, None
+
 def analyze_url(url):
 
     score = 0
